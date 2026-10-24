@@ -19,4 +19,5 @@ dependencies {
     // Pure-Java text tests execute MiniMessage directly; Paper is compileOnly, so
     // its Adventure runtime is not otherwise present on the test runtime classpath.
     testImplementation "net.kyori:adventure-text-minimessage:${adventureVersion}"
+    testImplementation "net.kyori:adventure-text-serializer-plain:${adventureVersion}"
 }
