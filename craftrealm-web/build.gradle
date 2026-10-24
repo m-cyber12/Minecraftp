@@ -1,0 +1,16 @@
+/*
+ * craftrealm-web — the optional embedded dashboard.
+ *
+ * Deliberately free of Bukkit imports: everything it needs from the server
+ * arrives through the WebContext callback interface.
+ */
+dependencies {
+    api project(':craftrealm-api')
+
+    // Javalin 6 (+ Jetty + Kotlin stdlib) is shaded into CraftRealm.jar.
+    implementation "io.javalin:javalin:${javalinVersion}"
+    // Javalin bundles Jetty and Kotlin but not a JSON library; Gson is small and
+    // has no reflection surprises inside a plugin class loader.
+    implementation 'com.google.code.gson:gson:2.11.0'
+    compileOnly 'org.slf4j:slf4j-api:2.0.13'
+}

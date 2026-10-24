@@ -1,0 +1,510 @@
+# ===========================================================================
+#  CraftRealm — configuration
+# ---------------------------------------------------------------------------
+#  Every value here is read by io.craftrealm.core.config.ConfigLoader. If you
+#  delete a key the built-in default is used, so a minimal config.yml is valid.
+#
+#  After editing, run /craftrealm reload. Storage changes need a restart.
+# ===========================================================================
+
+config-version: 1
+
+# ---------------------------------------------------------------- storage
+# SQLite is the default and needs no setup. MySQL is recommended for networks
+# of two or more servers: it lets them share one ledger, so money can never be
+# duplicated by a cross-server trade.
+storage:
+  type: sqlite                 # sqlite | mysql
+  file: craftrealm.db          # relative to plugins/CraftRealm/
+  threads: 4                   # database worker threads
+  server-id: local             # written to every ledger row
+  pool:
+    maximum-size: 10
+    minimum-idle: 2
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    database: craftrealm
+    username: craftrealm
+    password: change-me
+    properties: "useSSL=false&characterEncoding=utf8&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+
+# ---------------------------------------------------------------- economy
+economy:
+  currency:
+    name: Crowns
+    symbol: "⛃"
+    decimals: 2
+    starting-balance: 100.0
+  limits:
+    # Anti-fat-finger ceiling for a single transaction.
+    max-transaction: 1000000000.0
+    min-pay: 0.01
+    # Per-player writes per second; above this the transaction is refused.
+    transactions-per-second: 20
+  alerts:
+    # Transactions above this appear in the Control Room alert queue.
+    large-transaction: 100000.0
+
+# ------------------------------------------------------------------- bank
+bank:
+  interest:
+    rate-percent: 1.5          # per period, on the vault balance
+    period-hours: 24
+    # Interest is not paid on balances above this (stops infinite compounding).
+    max-balance: 1000000.0
+  loans:
+    enabled: true
+    max-principal: 25000.0
+    # A player may owe at most this multiple of their wallet + vault.
+    limit-multiplier: 2.0
+    daily-rate-percent: 2.0
+    term-days: 7
+    # Applied once when a loan becomes overdue.
+    penalty-percent: 10.0
+    default-after-days: 3
+
+# ----------------------------------------------------------------- market
+market:
+  buy-multiplier: 1.25         # buying costs 25% more than the raw price
+  elasticity: 0.02             # price move per reference volume traded
+  reference-volume: 64
+  min-factor: 0.40             # price can fall to 40% of the anchor
+  max-factor: 1.50             # and rise to 150%
+  recovery-per-hour: 0.08      # how fast prices drift back to the anchor
+  trend-threshold: 0.03        # 3% move is shown as a trend arrow
+
+  blacklist:
+    - BEDROCK
+    - SPAWNER
+    - END_PORTAL_FRAME
+    - COMMAND_BLOCK
+    - BARRIER
+    - STRUCTURE_BLOCK
+    - LIGHT
+
+  # Anchor prices. Add any material the server should trade.
+  base-prices:
+    COBBLESTONE: 0.5
+    STONE: 0.8
+    DEEPSLATE: 1.2
+    OAK_LOG: 1.0
+    SPRUCE_LOG: 1.1
+    COAL: 2.0
+    IRON_INGOT: 12.0
+    COPPER_INGOT: 4.0
+    GOLD_INGOT: 30.0
+    REDSTONE: 3.0
+    LAPIS_LAZULI: 5.0
+    DIAMOND: 120.0
+    EMERALD: 90.0
+    NETHERITE_INGOT: 900.0
+    WHEAT: 1.5
+    CARROT: 1.2
+    POTATO: 1.2
+    BEETROOT: 1.4
+    SUGAR_CANE: 1.0
+    PUMPKIN: 2.5
+    MELON_SLICE: 1.0
+    COD: 3.0
+    SALMON: 3.5
+    TROPICAL_FISH: 6.0
+    PUFFERFISH: 5.0
+    ROTTEN_FLESH: 0.4
+    BONE: 1.0
+    STRING: 0.8
+    GUNPOWDER: 2.0
+    LEATHER: 2.2
+    PAPER: 0.9
+    BOOK: 3.0
+    GLASS: 1.4
+    SAND: 0.6
+    CLAY_BALL: 0.7
+
+  # GUI shelves. Order here is the order in /shop.
+  categories:
+    "Ores and metals":
+      - COAL
+      - IRON_INGOT
+      - COPPER_INGOT
+      - GOLD_INGOT
+      - REDSTONE
+      - LAPIS_LAZULI
+      - DIAMOND
+      - EMERALD
+      - NETHERITE_INGOT
+    "Building":
+      - COBBLESTONE
+      - STONE
+      - DEEPSLATE
+      - OAK_LOG
+      - SPRUCE_LOG
+      - GLASS
+      - SAND
+      - CLAY_BALL
+    "Farming":
+      - WHEAT
+      - CARROT
+      - POTATO
+      - BEETROOT
+      - SUGAR_CANE
+      - PUMPKIN
+      - MELON_SLICE
+    "Fishing and mobs":
+      - COD
+      - SALMON
+      - TROPICAL_FISH
+      - PUFFERFISH
+      - ROTTEN_FLESH
+      - BONE
+      - STRING
+      - GUNPOWDER
+      - LEATHER
+
+# ---------------------------------------------------------------- auction
+auction:
+  listing-fee-percent: 5.0     # of the starting bid, charged up front
+  listing-fee-min: 5.0
+  max-listings: 8              # per player
+  min-price: 1.0
+  max-price: 5000000.0
+  default-duration-hours: 48
+  max-duration-hours: 72
+  min-bid-increment-percent: 5.0
+  tax-percent: 2.0             # taken from the seller's proceeds
+
+# ------------------------------------------------------------------- jobs
+jobs:
+  max-level: 50
+  multiplier-per-level: 0.05   # +5% payout per level
+  xp-base: 100
+  xp-growth: 1.15
+  daily-cap: 5000.0            # Crowns a single job may pay per day
+  xp-per-crown: 4.0
+
+  # Base payout per unit. Keys are Bukkit material names; the hunter table uses
+  # entity type names instead.
+  payouts:
+    miner:
+      STONE: 0.6
+      COBBLESTONE: 0.5
+      DEEPSLATE: 1.0
+      COAL_ORE: 2.0
+      DEEPSLATE_COAL_ORE: 2.2
+      IRON_ORE: 4.0
+      DEEPSLATE_IRON_ORE: 4.2
+      COPPER_ORE: 2.5
+      GOLD_ORE: 8.0
+      DEEPSLATE_GOLD_ORE: 8.5
+      REDSTONE_ORE: 3.0
+      LAPIS_ORE: 4.0
+      DIAMOND_ORE: 20.0
+      DEEPSLATE_DIAMOND_ORE: 22.0
+      EMERALD_ORE: 18.0
+      NETHER_QUARTZ_ORE: 2.0
+      ANCIENT_DEBRIS: 60.0
+    farmer:
+      WHEAT: 1.2
+      CARROTS: 1.0
+      POTATOES: 1.0
+      BEETROOTS: 1.2
+      SUGAR_CANE: 0.8
+      MELON: 1.4
+      PUMPKIN: 1.4
+      NETHER_WART: 2.0
+      COCOA: 1.6
+    hunter:
+      ZOMBIE: 1.5
+      SKELETON: 1.5
+      SPIDER: 1.5
+      CREEPER: 2.5
+      ENDERMAN: 4.0
+      BLAZE: 4.0
+      WITCH: 4.0
+      WITHER_SKELETON: 6.0
+      PIGLIN_BRUTE: 6.0
+      ELDER_GUARDIAN: 40.0
+      WITHER: 250.0
+      ENDER_DRAGON: 500.0
+    fisher:
+      COD: 2.0
+      SALMON: 2.2
+      TROPICAL_FISH: 3.5
+      PUFFERFISH: 3.0
+      NAUTILUS_SHELL: 8.0
+      PRISMARINE_SHARD: 2.0
+      PRISMARINE_CRYSTALS: 4.0
+    builder:
+      OAK_PLANKS: 0.3
+      SPRUCE_PLANKS: 0.3
+      STONE_BRICKS: 0.4
+      DEEPSLATE_BRICKS: 0.5
+      GLASS: 0.4
+      OAK_LOG: 0.3
+      TORCH: 0.2
+
+# ----------------------------------------------------------------- claims
+claims:
+  enabled: true
+  price-per-block: 0.5
+  upkeep-per-block-per-day: 0.02
+  min-size: 16
+  max-size: 64
+  max-claims: 3
+  grace-days: 3                # days of unpaid upkeep before a claim decays
+
+# ------------------------------------------------------------- chest shops
+chest-shops:
+  enabled: true
+  tax-percent: 2.0
+  max-per-player: 10
+  holograms: true
+  require-sign: true
+
+# --------------------------------------------------------------- web panel
+# Turn this on only behind a firewall or a reverse proxy with HTTPS.
+web:
+  enabled: false
+  host: 0.0.0.0
+  port: 8080
+  # Paste long random strings (e.g. from `openssl rand -hex 32`).
+  tokens: []
+  session-minutes: 720
+  allow-console: true
+  max-console-lines: 200
+
+# ----------------------------------------------------------------- discord
+discord:
+  enabled: false
+  webhook-url: ""
+  notify:
+    bans: true
+    reports: true
+    large-transactions: true
+    events: true
+  large-transaction-threshold: 100000.0
+
+# ------------------------------------------------------------------- theme
+theme:
+  sounds: true
+  custom-model-data:
+    enabled: false
+    offset: 10000              # model data base for icon skins
+  palette:
+    oak: "#b07d4f"
+    spruce: "#6b4a2f"
+    deepslate: "#36393d"
+    redstone: "#c0392b"
+    gold: "#e8b339"
+    copper: "#c77b53"
+    emerald: "#2fbf71"
+    lava: "#f26b21"
+    parchment: "#e8d8b0"
+
+# ------------------------------------------------------------------- staff
+staff:
+  tiers:
+    helper:
+      permission: craftrealm.tier.helper
+      weight: 1
+    mod:
+      permission: craftrealm.tier.mod
+      weight: 2
+    admin:
+      permission: craftrealm.tier.admin
+      weight: 3
+    owner:
+      permission: craftrealm.tier.owner
+      weight: 4
+
+  # Warning ladder. The Nth warning applies the listed action.
+  escalation:
+    - warnings: 2
+      action: MUTE
+      duration: 1h
+    - warnings: 3
+      action: TEMPBAN
+      duration: 1d
+    - warnings: 5
+      action: BAN
+      duration: permanent
+
+# ------------------------------------------------------------- admin panel
+admin:
+  health:
+    lag-entity-threshold: 150  # entities in one chunk before it is flagged
+    scan-radius-chunks: 3
+    max-cleanup-chunks: 8
+  reports:
+    cooldown-seconds: 60
+    auto-close-days: 14
+  freeze:
+    blocks-commands: true
+  ban:
+    default-reason: "Removed from the realm"
+
+# ------------------------------------------------------------- world events
+events:
+  enabled: true
+  auto-start: true
+  check-interval-minutes: 30
+  min-gap-minutes: 60
+  duration-minutes: 20
+  announce: true
+  pool:
+    - gold_rush
+    - blood_moon
+    - market_crash
+    - merchant_caravan
+  gold-rush:
+    multiplier: 2.0
+    materials:
+      - COAL_ORE
+      - IRON_ORE
+      - GOLD_ORE
+      - DIAMOND_ORE
+      - EMERALD_ORE
+      - ANCIENT_DEBRIS
+  blood-moon:
+    multiplier: 2.0
+  market-crash:
+    multiplier: 0.6
+  merchant-caravan:
+    rare-items: 4
+
+# ------------------------------------------------------------------ quests
+quests:
+  enabled: true
+  daily-count: 3
+  weekly-count: 2
+  templates:
+    - id: daily_mine
+      kind: MINE_BLOCK
+      scope: DAILY
+      target: 128
+      reward: 250.0
+      currency: CROWNS
+    - id: daily_harvest
+      kind: HARVEST
+      scope: DAILY
+      target: 64
+      reward: 200.0
+      currency: CROWNS
+    - id: daily_hunt
+      kind: KILL_MOB
+      scope: DAILY
+      target: 25
+      reward: 2
+      currency: SHARDS
+    - id: daily_build
+      kind: PLACE_BLOCK
+      scope: DAILY
+      target: 96
+      reward: 180.0
+      currency: CROWNS
+    - id: weekly_mine
+      kind: MINE_BLOCK
+      scope: WEEKLY
+      target: 1024
+      reward: 5
+      currency: SHARDS
+    - id: weekly_fish
+      kind: FISH
+      scope: WEEKLY
+      target: 64
+      reward: 1200.0
+      currency: CROWNS
+
+# ----------------------------------------------------------------- seasons
+seasons:
+  enabled: true
+  length-days: 30
+  rewards:
+    - rank: 1
+      shards: 100
+      crowns: 25000.0
+      title: "Guildmaster"
+    - rank: 2
+      shards: 60
+      crowns: 12000.0
+      title: "Master Craftsman"
+    - rank: 3
+      shards: 40
+      crowns: 6000.0
+      title: "Journeyman"
+    - rank: 10
+      shards: 10
+      crowns: 1000.0
+      title: "Apprentice"
+
+# --------------------------------------------------------------- cosmetics
+# Cosmetic ids must be <type>.<name> so equipping one replaces the previous
+# cosmetic of the same type.
+cosmetics:
+  enabled: true
+  catalogue:
+    - id: prefix.smith
+      type: PREFIX
+      value: "<#c77b53>[Smith]</#c77b53> "
+      cost: 20
+      name: "[Smith] prefix"
+    - id: prefix.miner
+      type: PREFIX
+      value: "<#b07d4f>[Miner]</#b07d4f> "
+      cost: 20
+      name: "[Miner] prefix"
+    - id: prefix.guildmaster
+      type: PREFIX
+      value: "<#e8b339>[Guildmaster]</#e8b339> "
+      cost: 120
+      name: "[Guildmaster] prefix"
+    - id: name_color.gold
+      type: NAME_COLOR
+      value: "#e8b339"
+      cost: 15
+      name: "Gold name"
+    - id: name_color.emerald
+      type: NAME_COLOR
+      value: "#2fbf71"
+      cost: 15
+      name: "Emerald name"
+    - id: particle_trail.embers
+      type: PARTICLE_TRAIL
+      value: "FLAME"
+      cost: 40
+      name: "Ember trail"
+    - id: particle_trail.dust
+      type: PARTICLE_TRAIL
+      value: "ASH"
+      cost: 25
+      name: "Ash trail"
+
+# ---------------------------------------------------------------- bounties
+bounties:
+  enabled: true
+  min: 100.0
+  max: 100000.0
+  fee-percent: 5.0
+  anonymous: false
+
+# ----------------------------------------------------------------- streaks
+streaks:
+  enabled: true
+  base-reward: 50.0
+  growth-percent: 15.0
+  max-streak: 30
+  shard-every-days: 7
+  shards-per-milestone: 2
+
+# ----------------------------------------------------------------- treasure
+treasure:
+  enabled: true
+  default-shards: 3
+  chest-block: CHEST
+  announce: true
+
+# ----------------------------------------------------------------- messages
+messages:
+  locale: en_US               # file name in plugins/CraftRealm/lang/
+  fallback: en_US
+  prefix: "<#6b4a2f>[<#e8b339>CraftRealm</#e8b339>]</#6b4a2f> "

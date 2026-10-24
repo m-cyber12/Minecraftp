@@ -1,0 +1,26 @@
+/*
+ * CraftRealm — Gradle multi-module build.
+ *
+ * Module graph (arrows point at compile-time dependencies):
+ *
+ *   craftrealm-api        contracts, immutable models, Bukkit events
+ *        ^
+ *   craftrealm-core       database, pure domain logic, i18n, GUI framework
+ *        ^
+ *   craftrealm-economy    Vault bridge, currency commands & GUIs, jobs, market, auctions
+ *   craftrealm-admin      control room, punishments, reports, health, audit
+ *   craftrealm-events     world events, claims, chest shops, quests, seasons, cosmetics
+ *   craftrealm-web        embedded Javalin dashboard (no Bukkit dependency at all)
+ *        ^
+ *   craftrealm-plugin     the shaded, runnable CraftRealm.jar (wiring + resources)
+ */
+
+rootProject.name = 'CraftRealm'
+
+include 'craftrealm-api'
+include 'craftrealm-core'
+include 'craftrealm-economy'
+include 'craftrealm-admin'
+include 'craftrealm-events'
+include 'craftrealm-web'
+include 'craftrealm-plugin'

@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:item/template_skull",
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 10005
+      },
+      "model": "craftrealm:item/gui/players"
+    }
+  ]
+}

@@ -1,0 +1,816 @@
+# ===========================================================================
+#  CraftRealm — فارسی (fa_IR)
+# ---------------------------------------------------------------------------
+#  همهٔ خطوط با MiniMessage نوشته شده‌اند. جای‌نگهدارها با {اینگونه} مشخص
+#  می‌شوند و نام بازیکن پیش از جای‌گذاری پاک‌سازی می‌شود.
+#  پالت رنگ: بلوط #b07d4f · صنوبر #6b4a2f · سنگ تیره #36393d · ردستون #c0392b
+#            طلا #e8b339 · مس #c77b53 · زمرد #2fbf71 · گدازه #f26b21
+#            کاغذ پوستی #e8d8b0
+# ===========================================================================
+
+meta:
+  locale: fa_IR
+  name: فارسی
+
+# ------------------------------------------------------------- چارچوب دستورها
+command:
+  usage: "<#e8d8b0>روش استفاده:</#e8d8b0> <white>{usage}"
+  unknown: "<#c0392b>چنین دستوری وجود ندارد:</#c0392b> <white>{input}"
+  no-permission: "<#c0392b>شما اجازهٔ این کار را ندارید.</#c0392b>"
+  player-only: "<#f26b21>این دستور فقط برای بازیکنان است.</#f26b21>"
+  invalid-amount: "<#c0392b>«{input}» مبلغ معتبری نیست.</#c0392b>"
+  invalid-number: "<#c0392b>«{input}» عدد معتبری نیست.</#c0392b>"
+  cooldown: "<#f26b21>کمی صبر کنید — {seconds} ثانیهٔ دیگر دوباره تلاش کنید.</#f26b21>"
+  error: "<#c0392b>این کار انجام نشد: {error}</#c0392b>"
+  help-header: "<#e8b339>دستورهای CraftRealm</#e8b339>"
+  help-entry: "<#6b4a2f>·</#6b4a2f> <white>{usage}</white> <dark_gray>{description}</dark_gray>"
+  unknown-player: "<#c0392b>بازیکنی با نام {player} نیست.</#c0392b>"
+
+gui:
+  previous: "<#b07d4f>« صفحهٔ قبل"
+  next: "<#b07d4f>صفحهٔ بعد »"
+  close: "<#c0392b>بستن"
+  back: "<#b07d4f>بازگشت"
+  cancel: "<#c0392b>لغو"
+  confirm: "<#2fbf71>تأیید"
+  page: "<#6b4a2f>صفحهٔ {page} از {pages}"
+  empty: "<#6b4a2f>هنوز چیزی اینجا نیست."
+
+currency:
+  name: "تاج"
+  symbol: "⛃"
+  format:
+    amount: "{amount} ⛃"
+
+# ------------------------------------------------------------ نتیجهٔ تراکنش‌ها
+economy:
+  result:
+    ok: "<#2fbf71>انجام شد.</#2fbf71>"
+    invalid_amount: "<#c0392b>این مبلغ معتبر نیست.</#c0392b>"
+    insufficient_funds: "<#c0392b>تاج کافی برای این کار ندارید.</#c0392b>"
+    limit_exceeded: "<#f26b21>این مبلغ از سقف هر تراکنش بیشتر است.</#f26b21>"
+    rate_limited: "<#f26b21>بیش از حد سریع پول جابه‌جا می‌کنید — کمی صبر کنید.</#f26b21>"
+    self_transfer: "<#f26b21>نمی‌توانید به خودتان پرداخت کنید.</#f26b21>"
+    duplicate_operation: "<#f26b21>این تراکنش قبلاً انجام شده است.</#f26b21>"
+    account_frozen: "<#c0392b>حساب شما قفل است.</#c0392b>"
+    no_account: "<#c0392b>برای این بازیکن حسابی پیدا نشد.</#c0392b>"
+    error: "<#c0392b>اقتصاد نتوانست این کار را انجام دهد. هیچ تغییری ثبت نشد.</#c0392b>"
+  balance:
+    header: "<#e8b339>کیف {player}</#e8b339>"
+    wallet: "<#6b4a2f>·</#6b4a2f> <#e8b339>کیف</#e8b339> <white>{amount}</white>"
+    bank: "<#6b4a2f>·</#6b4a2f> <#c77b53>گنجینه</#c77b53> <white>{amount}</white>"
+    shards: "<#6b4a2f>·</#6b4a2f> <#2fbf71>تراشه</#2fbf71> <white>{amount}</white>"
+  baltop:
+    header: "<#e8b339>ثروتمندترین‌های سرزمین</#e8b339>"
+    entry: "<#6b4a2f>{rank}.</#6b4a2f> <white>{player}</white> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    empty: "<#6b4a2f>هنوز هیچ حسابی باز نشده است.</#6b4a2f>"
+  pay:
+    self: "<#f26b21>نمی‌توانید به خودتان پرداخت کنید.</#f26b21>"
+    too-small: "<#c0392b>کمترین مبلغ انتقال {min} است.</#c0392b>"
+    sent: "<#2fbf71>{amount} به {player} فرستادید.</#2fbf71> <dark_gray>(موجودی: {balance})</dark_gray>"
+    received: "<#2fbf71>{player} مبلغ {amount} برای شما فرستاد.</#2fbf71> <dark_gray>(موجودی: {balance})</dark_gray>"
+
+# ------------------------------------------------------------------- /balance
+balance:
+  self: "<#e8b339>کیف پول:</#e8b339> <white>{balance}</white>"
+  self-full: "<#e8b339>کیف پول:</#e8b339> <white>{balance}</white> <dark_gray>·</dark_gray> <#2fbf71>تراشه‌ها:</#2fbf71> <white>{shards}</white> <dark_gray>·</dark_gray> <#c77b53>بانک:</#c77b53> <white>{bank}</white>"
+  other: "<#e8b339>{player}</#e8b339> دارندهٔ <white>{balance}</white> است"
+  hidden: "<#c0392b>این بازیکن موجودی‌اش را خصوصی نگه می‌دارد.</#c0392b>"
+
+# ----------------------------------------------------------------------- /pay
+pay:
+  sent: "<#2fbf71>{amount} به {player} فرستادید.</#2fbf71> <dark_gray>(موجودی: {balance})</dark_gray>"
+  received: "<#2fbf71>{player} مبلغ {amount} برای شما فرستاد.</#2fbf71> <dark_gray>(موجودی: {balance})</dark_gray>"
+  minimum: "<#c0392b>کمترین مبلغ انتقال {minimum} است.</#c0392b>"
+  offline: "<#c0392b>{player} آنلاین نیست.</#c0392b>"
+  confirm: "<#f26b21>مبلغ {amount} زیاد است — برای تأیید تا ۳۰ ثانیهٔ دیگر دستور را تکرار کنید.</#f26b21>"
+
+# -------------------------------------------------------------------- /baltop
+baltop:
+  header: "<#e8b339>ثروتمندترین‌های سرزمین</#e8b339> <dark_gray>(صفحهٔ {page}/{pages})</dark_gray>"
+  entry: "<#6b4a2f>{rank}.</#6b4a2f> <white>{player}</white> <dark_gray>—</dark_gray> <#e8b339>{balance}</#e8b339>"
+  empty: "<#6b4a2f>هنوز هیچ حسابی باز نشده است.</#6b4a2f>"
+  you: "<#2fbf71>شما رتبهٔ {rank} با {balance} هستید.</#2fbf71>"
+
+# ---------------------------------------------------------------------- /shop
+shop:
+  title: "<#6b4a2f>بازار"
+  category:
+    name: "<#e8b339>{category}</#e8b339>"
+    lore: "<#6b4a2f>برای دیدن کالاها کلیک کنید.</#6b4a2f>"
+    empty: "<#6b4a2f>این قفسه خالی است.</#6b4a2f>"
+  item:
+    name: "<white>{item}</white>"
+    lore: |-
+      <#6b4a2f>خرید:</#6b4a2f> <white>{buy}</white>
+      <#6b4a2f>فروش:</#6b4a2f> <white>{sell}</white>
+      <#6b4a2f>روند:</#6b4a2f> <white>{trend}</white>
+      <dark_gray>کلیک چپ: خرید ۱ · کلیک راست: فروش ۱
+      با شیفت: یک دستهٔ کامل</dark_gray>
+  bought: "<#2fbf71>{amount} عدد {item} به قیمت {total} خریدید.</#2fbf71>"
+  sold: "<#2fbf71>{amount} عدد {item} به قیمت {total} فروختید.</#2fbf71>"
+  sell-button:
+    name: "<#2fbf71>فروش همهٔ آیتم‌های دست</#2fbf71>"
+    lore: "<#6b4a2f>پیشخوان فروش را باز می‌کند.</#6b4a2f>"
+  trend:
+    up: "<#2fbf71>▲ صعودی"
+    down: "<#f26b21>▼ نزولی"
+    flat: "<#6b4a2f>▬ ثابت"
+  disabled: "<#c0392b>بازار در حال حاضر بسته است.</#c0392b>"
+  blacklisted: "<#c0392b>این آیتم قابل معامله نیست.</#c0392b>"
+  quote:
+    lore: |-
+      <#6b4a2f>بازار:</#6b4a2f> <white>{price}</white>
+      <#6b4a2f>قیمت پایه:</#6b4a2f> <white>{base}</white>
+      <dark_gray>قیمت‌ها آرام به سمت پایه بازمی‌گردند.</dark_gray>
+  unknown-category: "<#c0392b>قفسه‌ای با نام {category} نیست.</#c0392b>"
+
+# ---------------------------------------------------------------------- /sell
+sell:
+  title: "<#6b4a2f>پیشخوان فروش"
+  info:
+    name: "<#e8b339>روش فروش"
+    line: "<#6b4a2f>آیتم‌ها را در ردیف‌های بالا بگذارید و ببندید.</#6b4a2f>"
+    more: "<#6b4a2f>قیمت‌ها با عرضه و تقاضا تغییر می‌کنند.</#6b4a2f>"
+    lore: |-
+      <#6b4a2f>آیتم‌ها:</#6b4a2f> <white>{items}</white>
+      <#6b4a2f>دریافتی:</#6b4a2f> <#2fbf71>{total}</#2fbf71>
+      <dark_gray>برای فروش، پیشخوان را ببندید.</dark_gray>
+  close-lore: "<#2fbf71>برای فروش و بستن کلیک کنید.</#2fbf71>"
+  nothing: "<#6b4a2f>چیزی برای فروش نبود.</#6b4a2f>"
+  result: "<#2fbf71>{count} آیتم به قیمت {total} فروخته شد.</#2fbf71>"
+  returned: "<#f26b21>برخی آیتم‌ها فروش نرفتند و بازگردانده شدند.</#f26b21>"
+  confirm:
+    lore: |-
+      <#6b4a2f>دریافتی:</#6b4a2f> <#2fbf71>{total}</#2fbf71>
+      <dark_gray>برای فروش همهٔ آیتم‌های بالا کلیک کنید.</dark_gray>
+  sold: "<#2fbf71>همه به قیمت {total} فروخته شد — موجودی {balance}.</#2fbf71>"
+
+# ---------------------------------------------------------------------- /bank
+bank:
+  title: "<#6b4a2f>گنجینهٔ تاج‌ها"
+  vault:
+    name: "<#e8b339>پس‌انداز</#e8b339>"
+    lore: |-
+      <#6b4a2f>موجودی:</#6b4a2f> <white>{balance}</white>
+      <#6b4a2f>سود آماده:</#6b4a2f> <#2fbf71>{interest}</#2fbf71>
+      <#6b4a2f>نرخ:</#6b4a2f> <white>{rate}% هر {period} ساعت</white>
+  deposit:
+    name: "<#2fbf71>واریز</#2fbf71>"
+    lore: "<#6b4a2f>چپ: ۱٬۰۰۰ · راست: همه</#6b4a2f>"
+  withdraw:
+    name: "<#f26b21>برداشت</#f26b21>"
+    lore: "<#6b4a2f>چپ: ۱٬۰۰۰ · راست: همه</#6b4a2f>"
+  interest:
+    name: "<#2fbf71>سود</#2fbf71>"
+    lore: "<#6b4a2f>در پایان هر دوره خودکار واریز می‌شود.</#6b4a2f>"
+  loan:
+    name: "<#e8b339>وام</#e8b339>"
+    lore: |-
+      <#6b4a2f>سقف:</#6b4a2f> <white>{limit}</white>
+      <#6b4a2f>نرخ روزانه:</#6b4a2f> <white>{rate}%</white>
+    active: "<#f26b21>بدهی: {amount} — سررسید {due}</#f26b21>"
+    none: "<#6b4a2f>وام باز ندارید.</#6b4a2f>"
+    active-lore: |-
+      <#6b4a2f>بدهی:</#6b4a2f> <#f26b21>{outstanding}</#f26b21>
+      <#6b4a2f>اصل وام:</#6b4a2f> <white>{principal}</white>
+      <#6b4a2f>سررسید:</#6b4a2f> <white>{due}</white>
+      <#6b4a2f>باقی‌مانده:</#6b4a2f> <white>{remaining}</white>
+    denied: "<#c0392b>بانک این وام را نپذیرفت.</#c0392b>"
+    not-eligible: "<#c0392b>هنوز واجد شرایط وام نیستید.</#c0392b>"
+    repaid: "<#2fbf71>{amount} بازپرداخت شد — {remaining} باقی است.</#2fbf71>"
+    taken: "<#e8b339>{amount} وام گرفتید؛ باید تا {due} مبلغ {owed} بپردازید.</#e8b339>"
+  deposited: "<#2fbf71>{amount} واریز شد.</#2fbf71>"
+  withdrawn: "<#2fbf71>{amount} برداشت شد.</#2fbf71>"
+  loan-taken: "<#e8b339>وام {amount} پرداخت شد — بازپرداخت تا {due}.</#e8b339>"
+  loan-repaid: "<#2fbf71>{amount} بازپرداخت شد.</#2fbf71>"
+  loan-limit: "<#c0392b>سقف شما {limit} است.</#c0392b>"
+  loan-overdue: "<#c0392b>یک وام سررسید شده — جریمهٔ {penalty}% اعمال شد.</#c0392b>"
+  disabled: "<#c0392b>وام در این سرور غیرفعال است.</#c0392b>"
+
+# ------------------------------------------------------------------- /auction
+auction:
+  title: "<#6b4a2f>خانهٔ حراج"
+  sell:
+    name: "<#2fbf71>ثبت آیتم دست</#2fbf71>"
+    lore: |-
+      <#6b4a2f>هزینه:</#6b4a2f> <white>{fee}</white>
+      <#6b4a2f>مالیات فروش:</#6b4a2f> <white>{tax}%</white>
+    listed: "<#2fbf71>{item} با قیمت {price} ثبت شد.</#2fbf71>"
+    empty-hand: "<#c0392b>آیتمی که می‌خواهید حراج کنید را در دست بگیرید.</#c0392b>"
+    changed-hand: "<#f26b21>آیتم دست شما عوض شد — از نو شروع کنید.</#f26b21>"
+    item-moved: "<#f26b21>آیتم را تا پایان ثبت در دست نگه دارید.</#f26b21>"
+    failed: "<#c0392b>آگهی ساخته نشد.</#c0392b>"
+  listing:
+    title: "<#6b4a2f>قیمت خود را بگذارید"
+    name: "<white>{item}</white>"
+    lore: |-
+      <#6b4a2f>پیشنهاد آغازین:</#6b4a2f> <white>{start}</white>
+      <#6b4a2f>خرید فوری:</#6b4a2f> <white>{buy}</white>
+      <#6b4a2f>پایان تا:</#6b4a2f> <white>{time}</white>
+      <dark_gray>چپ: افزایش · راست: کاهش · شیفت: تأیید</dark_gray>
+    raise: "<#2fbf71>پیشنهاد آغازین به {amount} افزایش یافت.</#2fbf71>"
+    lower: "<#f26b21>پیشنهاد آغازین به {amount} کاهش یافت.</#f26b21>"
+    confirm: "<#2fbf71>با قیمت {amount} ثبت شد — موفق باشید.</#2fbf71>"
+    too-many: "<#c0392b>شما {count} آگهی فعال دارید.</#c0392b>"
+    no-funds: "<#c0392b>هزینهٔ ثبت {fee} را ندارید.</#c0392b>"
+    not-held: "<#c0392b>آیتمی که می‌خواهید بفروشید را در دست بگیرید.</#c0392b>"
+    hint: |-
+      <dark_gray>چپ: ۱۰٪ افزایش · راست: ۱۰٪ کاهش
+      شیفت + چپ: تأیید آگهی</dark_gray>
+    quote: |-
+      <#6b4a2f>پیشنهاد آغازین:</#6b4a2f> <white>{start}</white>
+      <#6b4a2f>خرید فوری:</#6b4a2f> <white>{buy}</white>
+      <#6b4a2f>هزینه:</#6b4a2f> <white>{fee}</white>
+    confirm-lore: |-
+      <#6b4a2f>هزینهٔ همین حالا:</#6b4a2f> <white>{fee}</white>
+      <dark_gray>برای ثبت، شیفت + کلیک.</dark_gray>
+  bid-placed: "<#2fbf71>پیشنهاد {amount} ثبت شد.</#2fbf71>"
+  bid-too-low: "<#c0392b>کمترین پیشنهاد {minimum} است.</#c0392b>"
+  bought: "<#2fbf71>{item} را به {amount} خریدید.</#2fbf71>"
+  outbid: "<#f26b21>پیشنهاد شما برای {item} رد شد.</#f26b21>"
+  expired: "<#6b4a2f>آگهی {item} منقضی شد — در صندوق پستی شماست.</#6b4a2f>"
+  cancelled: "<#f26b21>آگهی لغو شد؛ آیتم در صندوق پستی است.</#f26b21>"
+  mailbox:
+    title: "<#6b4a2f>صندوق پستی"
+    name: "<white>{item}</white>"
+    info: "<#6b4a2f>آنچه خانهٔ حراج به شما بدهکار است را بگیرید.</#6b4a2f>"
+    item:
+      name: "<white>{item}</white>"
+      lore: "<#2fbf71>برای دریافت کلیک کنید.</#2fbf71>"
+    money:
+      name: "<#e8b339>{amount}</#e8b339>"
+      lore: "<#2fbf71>برای دریافت کلیک کنید.</#2fbf71>"
+    collected: "<#2fbf71>{what} دریافت شد.</#2fbf71>"
+    full: "<#f26b21>کیف شما پر است — اول جا باز کنید.</#f26b21>"
+    empty: "<#6b4a2f>صندوق پستی خالی است.</#6b4a2f>"
+    lore: "<#6b4a2f>{count} مورد دریافت‌نشده.</#6b4a2f>"
+    entry:
+      lore: |-
+        <#6b4a2f>{note}</#6b4a2f>
+        <dark_gray>رسیده در {time}</dark_gray>
+
+# ----------------------------------------------------------------------- /jobs
+jobs:
+  title: "<#6b4a2f>پیشه‌ها"
+  entry:
+    name: "<#e8b339>{job}</#e8b339> <dark_gray>(سطح {level})</dark_gray>"
+    unit: "بلوک"
+    lore: |-
+      <#6b4a2f>سطح:</#6b4a2f> <white>{level}/{max}</white>
+      <#6b4a2f>پیشرفت:</#6b4a2f> <white>{xp}/{required}</white>
+      <#6b4a2f>ضریب:</#6b4a2f> <#2fbf71>×{multiplier}</#2fbf71>
+      <#6b4a2f>درآمد امروز:</#6b4a2f> <white>{earned}</white>
+  how:
+    title: "<#e8b339>پیشه‌ها چطور پرداخت می‌کنند"
+    lore: |-
+      <#6b4a2f>در جهان کار کنید و تاج بگیرید.</#6b4a2f>
+      <#6b4a2f>هر سطح ضریب شما را تا {max}× بالا می‌برد.</#6b4a2f>
+      <#6b4a2f>بلوک‌هایی که خودتان می‌گذارید پولی نمی‌دهند.</#6b4a2f>
+  level-up: "<#2fbf71>{job} به سطح {level} رسید!</#2fbf71>"
+  cap: "<#f26b21>{job} به سقف روزانه رسید — فردا دوباره پرداخت می‌شود.</#f26b21>"
+  switched: "<#e8b339>اکنون پیشهٔ {job} را دنبال می‌کنید.</#e8b339>"
+  miner:
+    name: "<#6b4a2f>معدن‌کار</#6b4a2f>"
+  farmer:
+    name: "<#2fbf71>کشاورز</#2fbf71>"
+  hunter:
+    name: "<#c0392b>شکارچی</#c0392b>"
+  fisher:
+    name: "<#c77b53>ماهی‌گیر</#c77b53>"
+  builder:
+    name: "<#e8b339>سازنده</#e8b339>"
+
+# --------------------------------------------------------------------- /bounty
+bounty:
+  title: "<#6b4a2f>تختهٔ جایزه"
+  entry:
+    name: "<#c0392b>{player}</#c0392b> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    lore: "<#6b4a2f>{when} توسط {placer}</#6b4a2f>"
+    hint: "<#6b4a2f>جایزهٔ {player} را با</#6b4a2f> <#e8b339>{command}</#e8b339> <#6b4a2f>بالا ببرید.</#6b4a2f>"
+  empty:
+    name: "<#6b4a2f>جایزهٔ بازی باز نیست.</#6b4a2f>"
+    lore: "<#6b4a2f>با /bounty place <player> <amount> یکی بگذارید.</#6b4a2f>"
+  how:
+    name: "<#e8b339>جایزه‌ها چطور کار می‌کنند"
+    lore: |-
+      <#6b4a2f>هنگام ثبت از حساب کسر و به قاتل پرداخت می‌شود.</#6b4a2f>
+      <#6b4a2f>کارمزد:</#6b4a2f> <white>{fee}%</white>
+  placed: "<#e8b339>جایزهٔ {amount} برای {player} ثبت شد.</#e8b339>"
+  claimed: "<#e8b339>جایزهٔ {amount} برای {player} را دریافت کردید.</#e8b339>"
+  claimed-broadcast: "<#e8b339>{killer}</#e8b339> <#6b4a2f>جایزهٔ</#6b4a2f> <white>{amount}</white> <#6b4a2f>روی</#6b4a2f> <#c0392b>{player}</#c0392b> <#6b4a2f>را گرفت.</#6b4a2f>"
+  too-small: "<#c0392b>کمترین جایزه {minimum} است.</#c0392b>"
+  too-large: "<#c0392b>بیشترین جایزه {maximum} است.</#c0392b>"
+  self: "<#f26b21>نمی‌توانید روی خودتان جایزه بگذارید.</#f26b21>"
+  none: "<#6b4a2f>روی این بازیکن جایزه‌ای نیست.</#6b4a2f>"
+
+# --------------------------------------------------------- سکه و اسکناس
+coins:
+  minted-coin: "<#e8b339>سکه‌ای به ارزش {amount} ضرب شد.</#e8b339>"
+  minted-note: "<#e8b339>اسکناسی به ارزش {amount} امضا شد.</#e8b339>"
+  redeemed: "<#2fbf71>{amount} نقد شد. موجودی: {balance}</#2fbf71>"
+  already-redeemed: "<#f26b21>این اسکناس قبلاً نقد شده است.</#f26b21>"
+  forged: "<#c0392b>امضای این اسکناس معتبر نیست.</#c0392b>"
+  invalid: "<#c0392b>این سکه یا اسکناس CraftRealm نیست.</#c0392b>"
+  hold-one: "<#f26b21>برای نقد کردن، فقط یک سکه یا اسکناس در دست بگیرید.</#f26b21>"
+
+item:
+  coin:
+    name: "<#e8b339>سکهٔ طلا</#e8b339>"
+    lore: |-
+      <#6b4a2f>ارزش:</#6b4a2f> <white>{amount}</white>
+      <#6b4a2f>برای واریز کلیک راست کنید.</#6b4a2f>
+      <dark_gray>شمارهٔ سری {id}</dark_gray>
+  note:
+    name: "<#e8d8b0>اسکناس</#e8d8b0>"
+    lore: |-
+      <#6b4a2f>تعهد پرداخت به حامل:</#6b4a2f> <white>{amount}</white>
+      <#6b4a2f>صادرکننده:</#6b4a2f> <white>{issuer}</white>
+      <#6b4a2f>برای واریز کلیک راست کنید.</#6b4a2f>
+      <dark_gray>شمارهٔ سری {id}</dark_gray>
+
+# ----------------------------------------------------------------------- زمین
+claims:
+  gui:
+    title: "<#6b4a2f>زمین شما"
+    entry:
+      name: "<#e8b339>قطعه #{id}</#e8b339>"
+      lore: |-
+        <#6b4a2f>جهان:</#6b4a2f> <white>{world}</white>
+        <#6b4a2f>چانک:</#6b4a2f> <white>{x}، {z}</white>
+        <#6b4a2f>مساحت:</#6b4a2f> <white>{area} بلوک</white>
+        <#6b4a2f>هزینهٔ نگهداری:</#6b4a2f> <white>{upkeep} در روز</white>
+        <#6b4a2f>پرداخت‌شده تا:</#6b4a2f> <white>{paid}</white>
+        <#6b4a2f>وضعیت:</#6b4a2f> <white>{stage}</white>
+        <dark_gray>برای رها کردن، شیفت + کلیک.</dark_gray>
+    empty: "<#6b4a2f>هنوز زمینی ندارید.</#6b4a2f>"
+    new:
+      name: "<#2fbf71>ثبت زمین در اینجا</#2fbf71>"
+      lore: "<#6b4a2f>بایستید و دستور /claim create 4 را اجرا کنید.</#6b4a2f>"
+      hint: "<#e8b339>/claim create <شعاع></#e8b339> مربعی پیرامون شما ثبت می‌کند."
+  created: "<#2fbf71>{area} بلوک ثبت شد — هزینهٔ نگهداری {upkeep} در روز.</#2fbf71>"
+  buying: "<#e8b339>ثبت {area} بلوک به قیمت {price}…</#e8b339>"
+  failed: "<#c0392b>ثبت زمین ناموفق: {reason}</#c0392b>"
+  protected: "<#c0392b>این زمین به شخص دیگری تعلق دارد.</#c0392b>"
+  free: "<#6b4a2f>این زمین آزاد است.</#6b4a2f>"
+  info: "<#e8b339>مالک: {owner}</#e8b339> <dark_gray>·</dark_gray> <white>{area} بلوک</white> <dark_gray>·</dark_gray> <#6b4a2f>نگهداری {upkeep} در روز، پرداخت تا {paid}</#6b4a2f>"
+  removed: "<#f26b21>قطعه آزاد شد.</#f26b21>"
+  not-found: "<#c0392b>چنین قطعه‌ای نیست.</#c0392b>"
+  list-header: "<#e8b339>قطعه‌های شما</#e8b339> <dark_gray>({count})</dark_gray>"
+  list-entry: "<#6b4a2f>#{id}</#6b4a2f> <white>{world} {x}،{z}</white> <dark_gray>·</dark_gray> <white>{area} بلوک</white> <dark_gray>·</dark_gray> <#6b4a2f>مرحله {stage}، پرداخت {paid}</#6b4a2f>"
+  upkeep-missed: "<#f26b21>هزینهٔ نگهداری قطعهٔ #{id} پرداخت نشد.</#f26b21>"
+
+# ---------------------------------------------------------------------- کوئست
+quests:
+  gui:
+    title: "<#6b4a2f>تختهٔ مأموریت"
+    header: "<#e8b339>کارهای روزانه و هفتگی</#e8b339>"
+    header-lore: |-
+      <#6b4a2f>مأموریت را کامل کنید، سپس برای دریافت کلیک کنید.</#6b4a2f>
+      <#6b4a2f>مأموریت‌های روزانه نیمه‌شب منقضی می‌شوند.</#6b4a2f>
+    entry:
+      name: "<white>{title}</white>"
+      lore: |-
+        <#6b4a2f>پیشرفت:</#6b4a2f> <white>{progress}</white>
+        <#6b4a2f>{bar}</#6b4a2f>
+        <#6b4a2f>پاداش:</#6b4a2f> <#2fbf71>{reward}</#2fbf71>
+        <#6b4a2f>انقضا تا:</#6b4a2f> <white>{expires}</white>
+  not-complete: "<#f26b21>این مأموریت هنوز تمام نشده است.</#f26b21>"
+  claimed: "<#2fbf71>مأموریت کامل شد: {title}.</#2fbf71>"
+  claim-failed: "<#c0392b>دریافت این مأموریت ممکن نشد.</#c0392b>"
+  completed-broadcast: "<#e8b339>{player}</#e8b339> <#6b4a2f>یک مأموریت را کامل کرد.</#6b4a2f>"
+
+# -------------------------------------------------------------------- فصل‌ها
+seasons:
+  gui:
+    title: "<#6b4a2f>فصل"
+    header:
+      name: "<#e8b339>فصل {number}</#e8b339>"
+      lore: |-
+        <#6b4a2f>روزهای باقی‌مانده:</#6b4a2f> <white>{days}</white> <dark_gray>({left})</dark_gray>
+        <#6b4a2f>رتبهٔ شما:</#6b4a2f> <white>{rank}</white>
+        <#6b4a2f>تاج‌های کسب‌شده ملاک است، نه موجودی.</#6b4a2f>
+    entry:
+      name: "<#e8b339>#{rank} {player}</#e8b339>"
+      lore: |-
+        <#6b4a2f>کسب‌شده:</#6b4a2f> <white>{score}</white>
+        <#6b4a2f>عنوان:</#6b4a2f> <#c77b53>{title}</#c77b53>
+    empty: "<#6b4a2f>فصل تازه شروع شده — هنوز امتیازی نیست.</#6b4a2f>"
+  ended: "<#e8b339>فصل {number} پایان یافت. برنده: {player} با {score}.</#e8b339>"
+  started: "<#2fbf71>فصل {number} آغاز شد — با کسب تاج بالا بروید.</#2fbf71>"
+
+# ------------------------------------------------------------------- ظاهرها
+cosmetics:
+  gui:
+    title: "<#6b4a2f>ظاهرها"
+    header: "<#e8b339>عنوان‌ها و ردها</#e8b339>"
+    header-lore: |-
+      <#6b4a2f>با تراشه خریداری می‌شود.</#6b4a2f>
+      <#6b4a2f>شما دارید:</#6b4a2f> <white>{shards} تراشه</white>
+    entry:
+      name: "<white>{name}</white>"
+      lore: |-
+        <#6b4a2f>نوع:</#6b4a2f> <white>{type}</white>
+        <#6b4a2f>مقدار:</#6b4a2f> <white>{value}</white>
+        <#6b4a2f>هزینه:</#6b4a2f> <#e8b339>{price} تراشه</#e8b339>
+        <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+    entry-owned:
+      name: "<#2fbf71>{name}</#2fbf71>"
+  bought: "<#2fbf71>{name} با {price} تراشه باز شد.</#2fbf71>"
+  buy-failed: "<#c0392b>تراشهٔ کافی برای {name} ندارید.</#c0392b>"
+  equipped: "<#2fbf71>{name} فعال شد.</#2fbf71>"
+  equip-failed: "<#c0392b>این ظاهر فعال نشد.</#c0392b>"
+  unequipped: "<#6b4a2f>{name} برداشته شد.</#6b4a2f>"
+
+# --------------------------------------------------------------------- رویدادها
+events:
+  gui:
+    title: "<#6b4a2f>رویدادهای جهان"
+    header: "<#e8b339>چه خبر است</#e8b339>"
+    header-lore: |-
+      <#6b4a2f>در حال اجرا:</#6b4a2f> <white>{active}</white>
+      <dark_gray>کارکنان می‌توانند از اینجا رویداد شروع کنند.</dark_gray>
+    entry:
+      name: "<white>{event}</white>"
+      lore:
+        gold_rush: |-
+          <#e8b339>در مدت رویداد، سنگ دو برابر فروخته می‌شود.</#e8b339>
+          <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+        blood_moon: |-
+          <#c0392b>غنیمت هیولاها دو برابر است.</#c0392b>
+          <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+        market_crash: |-
+          <#f26b21>همهٔ قیمت‌ها پایین آمده است.</#f26b21>
+          <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+        merchant_caravan: |-
+          <#c77b53>بازرگانی کالاهای کمیاب دارد.</#c77b53>
+          <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+    remaining: "<#f26b21>پایان تا {time}</#f26b21>"
+    no-permission: "<#c0392b>فقط کارکنان می‌توانند رویداد شروع کنند.</#c0392b>"
+  started: "<#e8b339>{event} شروع شد.</#e8b339>"
+  stopped: "<#6b4a2f>{event} متوقف شد.</#6b4a2f>"
+  failed: "<#c0392b>{event} از قبل در حال اجراست.</#c0392b>"
+  stop: "<#6b4a2f>{event} پایان یافت.</#6b4a2f>"
+  gold-rush:
+    start: "<#e8b339>هجوم طلا آغاز شد — سنگ‌ها دو برابر فروخته می‌شوند!</#e8b339>"
+  blood-moon:
+    start: "<#c0392b>ماه خونین برخاست — غنیمت هیولاها دو برابر شد.</#c0392b>"
+  market-crash:
+    start: "<#f26b21>سقوط بازار — قیمت‌ها تا پایان رویداد پایین است.</#f26b21>"
+  caravan:
+    start: "<#c77b53>کاروان بازرگانان رسید.</#c77b53>"
+
+# -------------------------------------------------------------------- گنج‌ها
+treasure:
+  found: "<#2fbf71>گنجی یافتید: {shards} تراشه.</#2fbf71>"
+  broadcast: "<#e8b339>{player}</#e8b339> <#6b4a2f>گنجی پنهان یافت و</#6b4a2f> <white>{shards} تراشه</white> <#6b4a2f>گرفت.</#6b4a2f>"
+  hidden: "<#2fbf71>گنج #{id} با {shards} تراشه اینجا پنهان شد.</#2fbf71>"
+  hint: "<#e8b339>سرنخ:</#e8b339> <white>{clue}</white> <dark_gray>(حدود {distance} بلوک دورتر)</dark_gray>"
+  none: "<#6b4a2f>گنجی نزدیک شما پنهان نشده است.</#6b4a2f>"
+  list-header: "<#e8b339>گنج‌های پنهان</#e8b339> <dark_gray>({count})</dark_gray>"
+  list-entry: "<#6b4a2f>#{id}</#6b4a2f> <white>{world} {x}،{z}</white> <dark_gray>·</dark_gray> <white>{shards} تراشه</white>"
+  disabled: "<#c0392b>شکار گنج غیرفعال است.</#c0392b>"
+
+# ----------------------------------------------------------------- فروشگاه‌ها
+shops:
+  created: "<#2fbf71>فروشگاه ساخته شد: {stock} عدد {item} هر کدام {price}.</#2fbf71>"
+  removed: "<#f26b21>فروشگاه حذف و موجودی بازگردانده شد.</#f26b21>"
+  exists: "<#c0392b>این صندوق از قبل فروشگاه دارد.</#c0392b>"
+  need-chest: "<#c0392b>تابلو را روی صندوق بگذارید.</#c0392b>"
+  empty-chest: "<#c0392b>پیش از ساختن تابلو، کالا را در صندوق بگذارید.</#c0392b>"
+  bad-price: "<#c0392b>خط دوم باید قیمت باشد، مثلاً 12.5.</#c0392b>"
+  limit: "<#f26b21>به سقف تعداد فروشگاه رسیده‌اید.</#f26b21>"
+  locked: "<#6b4a2f>موجودی فروشگاه در دفتر کل است — برای خرید روی تابلو کلیک کنید.</#6b4a2f>"
+  not-owner: "<#c0392b>این فروشگاه شما نیست.</#c0392b>"
+  not-found: "<#c0392b>چنین فروشگاهی نیست.</#c0392b>"
+  out-of-stock: "<#f26b21>این فروشگاه موجودی ندارد.</#f26b21>"
+  bought: "<#2fbf71>{amount} عدد {item} به {total} خریدید.</#2fbf71>"
+  list-header: "<#e8b339>فروشگاه‌های شما</#e8b339> <dark_gray>({count})</dark_gray>"
+  list-entry: "<#6b4a2f>#{id}</#6b4a2f> <white>{world} {x}،{z}</white> <dark_gray>·</dark_gray> <white>هر کدام {price}</white> <dark_gray>·</dark_gray> <white>{stock} موجود</white>"
+  gui:
+    title: "<#6b4a2f>فروشگاه صندوقی"
+    broken: "<#c0392b>کالاهای این فروشگاه خوانده نشد.</#c0392b>"
+    preview:
+      name: "<white>{item}</white>"
+      lore: |-
+        <#6b4a2f>قیمت:</#6b4a2f> <#e8b339>هر کدام {price}</#e8b339>
+        <#6b4a2f>موجودی:</#6b4a2f> <white>{stock}</white>
+        <#6b4a2f>فروشنده:</#6b4a2f> <white>{seller}</white>
+    buy:
+      name: "<#2fbf71>خرید {amount}</#2fbf71>"
+      lore: |-
+        <#6b4a2f>هزینه:</#6b4a2f> <white>{cost}</white>
+        <#6b4a2f>موجودی پس از خرید:</#6b4a2f> <white>{stock}</white>
+
+# ------------------------------------------------------------------- نظارت
+punish:
+  warned: "<#f26b21>{player} اخطار گرفت ({action}).</#f26b21>"
+  applied: "<#f26b21>{player}: {type} ({duration}).</#f26b21>"
+  warned-self: "<#f26b21>به شما اخطار داده شد: {reason} (اخطار {count}).</#f26b21>"
+  muted: "<#c0392b>شما بی‌صدا شده‌اید.</#c0392b>"
+  still-muted: "<#c0392b>شما هنوز در این سرور بی‌صدا هستید.</#c0392b>"
+  frozen: "<#f26b21>کارکنان شما را قفل کرده‌اند.</#f26b21>"
+  unfrozen: "<#2fbf71>می‌توانید دوباره حرکت کنید.</#2fbf71>"
+  frozen-blocked: "<#c0392b>در حالت قفل نمی‌توانید این کار را بکنید.</#c0392b>"
+  kicked: "<#c0392b>شما اخراج شدید: {reason}</#c0392b>"
+  banned-kick: "<#c0392b>شما مسدود شدید: {reason} (پایان: {expires})</#c0392b>"
+  banned-screen: "<#c0392b>شما از این سرور مسدود شده‌اید.</#c0392b>\n<#6b4a2f>دلیل:</#6b4a2f> <white>{reason}</white>\n<#6b4a2f>درخواست بازبینی:</#6b4a2f> <white>{appeal}</white>"
+  lifted: "<#2fbf71>{type} شما برداشته شد.</#2fbf71>"
+  unbanned: "<#2fbf71>مسدودی {player} برداشته شد.</#2fbf71>"
+  not-banned: "<#6b4a2f>{player} مسدود نبود.</#6b4a2f>"
+
+staff:
+  vanish-on: "<#6b4a2f>اکنون از دید بازیکنان پنهان هستید.</#6b4a2f>"
+  vanish-off: "<#6b4a2f>دوباره قابل مشاهده هستید.</#6b4a2f>"
+  chat-on: "<#e8b339>گفتگوی کارکنان فعال شد.</#e8b339>"
+  chat-off: "<#6b4a2f>گفتگوی کارکنان غیرفعال شد.</#6b4a2f>"
+  chat-format: "<#c0392b>[کارکنان]</#c0392b> <white>{player}</white> <dark_gray>›</dark_gray> <#e8d8b0>{message}</#e8d8b0>"
+
+report:
+  submitted: "<#2fbf71>گزارش دربارهٔ {player} ثبت شد. سپاس.</#2fbf71>"
+  self: "<#f26b21>نمی‌توانید خودتان را گزارش کنید.</#f26b21>"
+  cooldown: "<#f26b21>همین حالا گزارش دادید — کمی به کارکنان فرصت دهید.</#f26b21>"
+  staff-alert: "<#f26b21>گزارش تازه:</#f26b21> <white>{reporter} → {target}</white> <dark_gray>(/reports)</dark_gray>"
+
+# ------------------------------------------------------------- پنل مدیریت
+admin:
+  room:
+    title: "<#6b4a2f>اتاق فرمان"
+    players:
+      name: "<#e8b339>بازیکنان</#e8b339>"
+      lore: "<#6b4a2f>کیف، موجودی، تلپورت و نظارت.</#6b4a2f>"
+    economy:
+      name: "<#e8b339>اقتصاد</#e8b339>"
+      lore: "<#6b4a2f>پول در گردش، تورم و صف هشدارها.</#6b4a2f>"
+    punishments:
+      name: "<#e8b339>تنبیه‌ها</#e8b339>"
+      lore: "<#6b4a2f>گزارش‌ها، اخطارها و نردبان تشدید.</#6b4a2f>"
+    world:
+      name: "<#e8b339>جهان</#e8b339>"
+      lore: "<#6b4a2f>شمارندهٔ هر جهان و آب‌وهوا.</#6b4a2f>"
+    health:
+      name: "<#e8b339>سلامت سرور</#e8b339>"
+      lore: "<#6b4a2f>TPS، حافظه و بدترین چانک‌ها.</#6b4a2f>"
+    logs:
+      name: "<#e8b339>دفتر رویداد</#e8b339>"
+      lore: "<#6b4a2f>همهٔ کارهای کارکنان، تازه‌ترین اول.</#6b4a2f>"
+    players-count: "<#6b4a2f>{count} نفر آنلاین</#6b4a2f>"
+    economy-count: "<#6b4a2f>کیف شما: {amount}</#6b4a2f>"
+    world-count: "<#6b4a2f>{count} جهان بارگذاری شده</#6b4a2f>"
+    health-tps: "<#6b4a2f>TPS:</#6b4a2f> <white>{tps}</white>"
+    health-ram: "<#6b4a2f>حافظه:</#6b4a2f> <white>{used}/{max} مگابایت</white>"
+    punishments-hint: "<#6b4a2f>گزارش‌ها داخل منتظرند.</#6b4a2f>"
+    logs-hint: "<#6b4a2f>تاریخ فقط‌خواندنی.</#6b4a2f>"
+    strip:
+      name: "<#e8b339>وضعیت زنده</#e8b339>"
+      lore: |-
+        <#6b4a2f>TPS:</#6b4a2f> <white>{tps}</white>
+        <#6b4a2f>حافظه:</#6b4a2f> <white>{ram}</white>
+        <#6b4a2f>زمان کارکرد:</#6b4a2f> <white>{uptime}</white>
+        <#6b4a2f>بازیکنان:</#6b4a2f> <white>{players}</white>
+  players:
+    title: "<#6b4a2f>بازیکنان"
+    empty: "<#6b4a2f>هنوز کسی وارد نشده است.</#6b4a2f>"
+    entry:
+      name: "<white>{player}</white>"
+      lore: |-
+        <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+        <#6b4a2f>کیف:</#6b4a2f> <white>{balance}</white>
+        <#6b4a2f>تراشه:</#6b4a2f> <white>{shards}</white>
+        <#6b4a2f>پینگ:</#6b4a2f> <white>{ping} میلی‌ثانیه</white>
+        <#6b4a2f>جهان:</#6b4a2f> <white>{world}</white>
+        <#6b4a2f>آخرین بازدید:</#6b4a2f> <white>{seen}</white>
+        <#6b4a2f>نشانه‌ها:</#6b4a2f> <white>{flags}</white>
+  player:
+    title: "<#6b4a2f>{player}"
+    not-found: "<#c0392b>بازیکنی با نام {player} نیست.</#c0392b>"
+    offline: "<#c0392b>این بازیکن آفلاین است.</#c0392b>"
+    confirm-shift: "<#f26b21>برای تأیید شیفت + کلیک کنید.</#f26b21>"
+    head:
+      name: "<#e8b339>{player}</#e8b339>"
+      lore: |-
+        <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+        <#6b4a2f>کیف:</#6b4a2f> <white>{balance}</white>
+        <#6b4a2f>تراشه:</#6b4a2f> <white>{shards}</white>
+        <#6b4a2f>اخطارها:</#6b4a2f> <white>{warnings}</white>
+        <#6b4a2f>آی‌پی‌های شناخته‌شده:</#6b4a2f> <white>{ips}</white>
+        <#6b4a2f>جهان:</#6b4a2f> <white>{world}</white>
+    balance:
+      name: "<#e8b339>تغییر موجودی</#e8b339>"
+      lore: |-
+        <#6b4a2f>چپ: +۱۰۰ · راست: −۱۰۰</#6b4a2f>
+        <#6b4a2f>با شیفت: ۱٬۰۰۰</#6b4a2f>
+      done: "<#2fbf71>{player} اکنون {amount} دارد.</#2fbf71>"
+    teleport:
+      name: "<#e8b339>تلپورت به بازیکن</#e8b339>"
+      lore: "<#6b4a2f>شما را به محل او می‌برد.</#6b4a2f>"
+    teleported: "<#2fbf71>به {player} تلپورت شدید.</#2fbf71>"
+    freeze:
+      name: "<#f26b21>قفل</#f26b21>"
+      lore: "<#6b4a2f>حرکت، آسیب و دستورها را می‌بندد.</#6b4a2f>"
+    froze: "<#f26b21>{player} قفل شد.</#f26b21>"
+    unfroze: "<#2fbf71>{player} می‌تواند حرکت کند.</#2fbf71>"
+    mute:
+      name: "<#f26b21>بی‌صدا</#f26b21>"
+      lore: "<#6b4a2f>چپ: یک ساعت · راست: رفع</#6b4a2f>"
+    unmuted: "<#2fbf71>{player} می‌تواند صحبت کند.</#2fbf71>"
+    inventory:
+      name: "<#e8b339>کیف‌ها</#e8b339>"
+      lore: "<#6b4a2f>چپ: کیف · راست: صندوق اِندر</#6b4a2f>"
+    notes:
+      name: "<#e8b339>یادداشت‌ها</#e8b339>"
+      lore: "<#6b4a2f>یادداشت‌های کارکنان را بخوانید و بنویسید.</#6b4a2f>"
+      hint: "<#e8b339>/notes {player} <متن></#e8b339> یادداشت می‌نویسد."
+    warn:
+      name: "<#f26b21>اخطار</#f26b21>"
+      lore: |-
+        <#6b4a2f>اخطارهای فعال:</#6b4a2f> <white>{count}</white>
+        <dark_gray>برای ثبت، شیفت + کلیک.</dark_gray>
+      confirm: "<#f26b21>برای افزودن اخطار، شیفت + کلیک روی برچسب نام.</#f26b21>"
+      done: "<#2fbf71>اخطار برای {player} ثبت شد (تشدید: {action}).</#2fbf71>"
+    ips:
+      name: "<#e8b339>تاریخ آی‌پی</#e8b339>"
+      lore: "<#6b4a2f>{count} نشانی ثبت شده.</#6b4a2f>"
+      header: "<#e8b339>نشانی‌های {player}</#e8b339>"
+      entry: "<#6b4a2f>·</#6b4a2f> <white>{ip}</white>"
+    kick:
+      name: "<#c0392b>اخراج</#c0392b>"
+      lore: "<#6b4a2f>برای اخراج شیفت + کلیک.</#6b4a2f>"
+    ban:
+      name: "<#c0392b>مسدودسازی</#c0392b>"
+      lore: |-
+        <#6b4a2f>چپ: ۲۴ ساعت · راست: همیشگی</#6b4a2f>
+        <dark_gray>برای تأیید شیفت + کلیک.</dark_gray>
+    punished: "<#f26b21>{player}: {type} اعمال شد.</#f26b21>"
+    history:
+      name: "<#e8b339>تاریخ</#e8b339>"
+      lore: "<#6b4a2f>تنبیه‌های گذشتهٔ این بازیکن.</#6b4a2f>"
+      header: "<#e8b339>تاریخ {player}</#e8b339>"
+      entry: "<#6b4a2f>{when}</#6b4a2f> <white>{type}</white> <dark_gray>—</dark_gray> <white>{reason}</white>"
+  inventory:
+    title: "<#6b4a2f>کیف {player}"
+    ender-title: "<#6b4a2f>صندوق اِندر {player}"
+    inspect: "<#6b4a2f>این خانه {amount} عدد {item} دارد.</#6b4a2f>"
+  economy:
+    title: "<#6b4a2f>داشبورد اقتصاد"
+    circulation:
+      name: "<#e8b339>حجم پول</#e8b339>"
+      lore: |-
+        <#6b4a2f>در گردش:</#6b4a2f> <white>{total}</white>
+        <#6b4a2f>حساب‌ها:</#6b4a2f> <white>{accounts}</white>
+    inflation:
+      name: "<#e8b339>تورم</#e8b339>"
+      lore: |-
+        <#6b4a2f>تغییر:</#6b4a2f> <white>{rate}</white>
+        <#6b4a2f>روند:</#6b4a2f> <white>{sparkline}</white>
+    top:
+      name: "<#e8b339>بیشترین درآمدها</#e8b339>"
+      empty: "<#6b4a2f>هنوز حسابی نیست.</#6b4a2f>"
+      entry: "<#6b4a2f>{rank}.</#6b4a2f> <white>{player}</white> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    alerts:
+      name: "<#f26b21>تراکنش‌های مشکوک</#f26b21>"
+      lore: "<#6b4a2f>{count} مورد بالاتر از آستانه.</#6b4a2f>"
+      none: "<#2fbf71>چیز مشکوکی نیست.</#2fbf71>"
+      header: "<#f26b21>{count} تراکنش بزرگ</#f26b21>"
+      entry: "<#6b4a2f>{when}</#6b4a2f> <white>{type}</white> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    market:
+      name: "<#e8b339>دفتر بازار</#e8b339>"
+      lore: "<#6b4a2f>قیمت‌های کنونی در برابر قیمت پایه.</#6b4a2f>"
+    snapshot:
+      name: "<#e8b339>ثبت عکس فوری</#e8b339>"
+      lore: "<#6b4a2f>با شیفت + کلیک، حجم پول امروز ثبت می‌شود.</#6b4a2f>"
+      done: "<#2fbf71>عکس فوری ثبت شد.</#2fbf71>"
+  alerts:
+    title: "<#6b4a2f>تراکنش‌های بزرگ"
+    entry:
+      name: "<#f26b21>{amount}</#f26b21> <dark_gray>{type}</dark_gray>"
+      lore: |-
+        <#6b4a2f>دلیل:</#6b4a2f> <white>{reason}</white>
+        <#6b4a2f>شناسهٔ دفتر:</#6b4a2f> <white>{id}</white>
+        <#6b4a2f>زمان:</#6b4a2f> <white>{when}</white>
+        <#6b4a2f>سرور:</#6b4a2f> <white>{server}</white>
+        <#6b4a2f>وضعیت:</#6b4a2f> <white>{state}</white>
+      operation: "<#6b4a2f>عملیات:</#6b4a2f> <white>{op}</white>"
+    already: "<#6b4a2f>این تراکنش قبلاً برگشت شده است.</#6b4a2f>"
+    rolled-back: "<#2fbf71>{amount} برگشت داده شد.</#2fbf71>"
+    failed: "<#c0392b>این تراکنش برگشت‌پذیر نبود.</#c0392b>"
+  market:
+    title: "<#6b4a2f>دفتر بازار"
+    refresh: "<#b07d4f>تازه‌سازی"
+    entry:
+      name: "<white>{item}</white>"
+      lore: |-
+        <#6b4a2f>قیمت:</#6b4a2f> <white>{price}</white>
+        <#6b4a2f>پایه:</#6b4a2f> <white>{base}</white>
+        <#6b4a2f>روند:</#6b4a2f> <white>{trend}</white>
+        <#6b4a2f>فروخته/خریده:</#6b4a2f> <white>{sold} / {bought}</white>
+        <#6b4a2f>فشار:</#6b4a2f> <white>{pressure}</white>
+        <#6b4a2f>به‌روزرسانی:</#6b4a2f> <white>{updated}</white>
+  health:
+    title: "<#6b4a2f>سلامت سرور"
+    tps:
+      name: "<#e8b339>تیک در ثانیه</#e8b339>"
+      lore: |-
+        <#6b4a2f>اکنون:</#6b4a2f> <white>{now}</white>
+        <#6b4a2f>{one}</#6b4a2f>
+        <#6b4a2f>۵ دقیقه:</#6b4a2f> <white>{five}</white> <dark_gray>·</dark_gray> <#6b4a2f>۱۵ دقیقه:</#6b4a2f> <white>{fifteen}</white>
+    ram:
+      name: "<#e8b339>حافظه</#e8b339>"
+      lore: |-
+        <#6b4a2f>مصرف:</#6b4a2f> <white>{used} مگابایت</white> <dark_gray>از</dark_gray> <white>{max} مگابایت</white>
+        <#6b4a2f>{bar}</#6b4a2f>
+        <#6b4a2f>{percent} از حافظه</#6b4a2f>
+    uptime:
+      name: "<#2fbf71>زمان کارکرد</#2fbf71>"
+      lore: |-
+        <#6b4a2f>مدت:</#6b4a2f> <white>{uptime}</white>
+        <#6b4a2f>بازیکنان:</#6b4a2f> <white>{players}</white>
+        <#6b4a2f>جهان‌ها:</#6b4a2f> <white>{worlds}</white>
+    cleanup:
+      name: "<#f26b21>پاک‌سازی تأخیر</#f26b21>"
+      lore: |-
+        <#6b4a2f>موجودات بدترین چانک‌ها را حذف می‌کند.</#6b4a2f>
+        <#6b4a2f>فقط چانک‌های بالای {threshold} موجود.</#6b4a2f>
+        <dark_gray>شیفت + کلیک · راست‌کلیک برای شامل شدن هیولاها.</dark_gray>
+      done: "<#2fbf71>{count} موجود حذف شد.</#2fbf71>"
+    hotspot:
+      name: "<#f26b21>چانک داغ {world} {x}، {z}</#f26b21>"
+      lore: |-
+        <#6b4a2f>موجودات:</#6b4a2f> <white>{entities}</white>
+        <#6b4a2f>بیشتر:</#6b4a2f> <white>{type}</white>
+        <dark_gray>برای پاک‌سازی این چانک شیفت + کلیک.</dark_gray>
+  world:
+    title: "<#6b4a2f>جهان‌ها"
+    entry:
+      name: "<#e8b339>{world}</#e8b339>"
+      lore: |-
+        <#6b4a2f>بازیکنان:</#6b4a2f> <white>{players}</white>
+        <#6b4a2f>چانک‌ها:</#6b4a2f> <white>{chunks}</white>
+        <#6b4a2f>موجودات:</#6b4a2f> <white>{entities}</white>
+        <#6b4a2f>زمان:</#6b4a2f> <white>{time}</white>
+        <#6b4a2f>آب‌وهوا:</#6b4a2f> <white>{weather}</white>
+    weather: "<#6b4a2f>{world}: آب‌وهوا اکنون {weather} است.</#6b4a2f>"
+    time: "<#6b4a2f>{world}: زمان روز تنظیم شد.</#6b4a2f>"
+    empty: "<#6b4a2f>هیچ جهانی بارگذاری نشده.</#6b4a2f>"
+    entities:
+      name: "<#e8b339>موجودات به تفکیک دسته</#e8b339>"
+      empty: "<#6b4a2f>موجودی بارگذاری نشده.</#6b4a2f>"
+      entry: "<#6b4a2f>{category}:</#6b4a2f> <white>{amount}</white>"
+  logs:
+    title: "<#6b4a2f>دفتر رویداد"
+    entry:
+      name: "<white>{action}</white> <dark_gray>توسط {staff}</dark_gray>"
+      lore: |-
+        <#6b4a2f>هدف:</#6b4a2f> <white>{target}</white>
+        <#6b4a2f>جزئیات:</#6b4a2f> <white>{detail}</white>
+        <#6b4a2f>زمان:</#6b4a2f> <white>{when}</white>
+        <#6b4a2f>شناسه:</#6b4a2f> <white>{id}</white>
+    empty: "<#6b4a2f>هنوز اقدامی ثبت نشده است.</#6b4a2f>"
+    header: "<#e8b339>دفتر رویداد</#e8b339> <dark_gray>({count})</dark_gray>"
+    chat-entry: "<#6b4a2f>{when}</#6b4a2f> <white>{staff}</white> <dark_gray>·</dark_gray> <#e8b339>{action}</#e8b339> <dark_gray>·</dark_gray> <white>{target}</white> <dark_gray>{detail}</dark_gray>"
+  punishments:
+    title: "<#6b4a2f>گزارش‌ها و تنبیه‌ها"
+    empty: "<#2fbf71>گزارش بازی نیست.</#2fbf71>"
+    resolved: "<#2fbf71>گزارش #{id} بررسی شد.</#2fbf71>"
+    failed: "<#c0392b>گزارش #{id} به‌روزرسانی نشد.</#c0392b>"
+    report:
+      name: "<#e8b339>گزارش #{id}</#e8b339>"
+      lore: |-
+        <#6b4a2f>گزارش‌دهنده:</#6b4a2f> <white>{reporter}</white>
+        <#6b4a2f>متهم:</#6b4a2f> <white>{target}</white>
+        <#6b4a2f>دلیل:</#6b4a2f> <white>{reason}</white>
+        <#6b4a2f>ثبت:</#6b4a2f> <white>{when}</white>
+        <dark_gray>چپ: بررسی · راست: رد.</dark_gray>
+    ladder:
+      name: "<#e8b339>نردبان اخطار</#e8b339>"
+      empty: "<#6b4a2f>هیچ قاعدهٔ تشدیدی تنظیم نشده.</#6b4a2f>"
+      entry: "<#6b4a2f>{warnings} اخطار →</#6b4a2f> <white>{action}</white> <dark_gray>({duration})</dark_gray>"
+  notes:
+    added: "<#2fbf71>یادداشت دربارهٔ {player} ثبت شد.</#2fbf71>"
+    header: "<#e8b339>یادداشت‌های {player}</#e8b339> <dark_gray>({count})</dark_gray>"
+    entry: "<#6b4a2f>{when}</#6b4a2f> <dark_gray>·</dark_gray> <white>{text}</white>"
+  broadcast: "<#e8b339>اطلاعیه:</#e8b339> <white>{message}</white>"
+  reloaded: "<#2fbf71>تنظیمات و فایل‌های زبان دوباره بارگذاری شد.</#2fbf71>"
+  reload-failed: "<#c0392b>بارگذاری ناموفق: {error}</#c0392b>"
+  version: "<#e8b339>CraftRealm</#e8b339> <white>نسخهٔ {version}</white>"
+  panel: "<#e8b339>پنل وب:</#e8b339> <white>{state}</white> <dark_gray>روی درگاه {port}</dark_gray>"
+  saved: "<#2fbf71>{count} قیمت بازار ذخیره شد.</#2fbf71>"
+
+# ------------------------------------------------------------------- زنجیره‌ها
+streak:
+  reward: "<#e8b339>روز {day} از زنجیرهٔ شما — {amount} افزوده شد.</#e8b339>"
+  milestone: "<#2fbf71>نقطهٔ عطف زنجیره! +{shards} تراشه.</#2fbf71>"
+
+title:
+  shop: "<#6b4a2f>بازار"
+  sell: "<#6b4a2f>پیشخوان فروش"
+  bank: "<#6b4a2f>گنجینهٔ تاج‌ها"
+  auction: "<#6b4a2f>خانهٔ حراج"
+  jobs: "<#6b4a2f>پیشه‌ها"
+  bounty: "<#6b4a2f>تختهٔ جایزه"
+  mailbox: "<#6b4a2f>صندوق پستی"
+  claims: "<#6b4a2f>زمین شما"
+  quests: "<#6b4a2f>تختهٔ مأموریت"
+  season: "<#6b4a2f>فصل"
+  cosmetics: "<#6b4a2f>ظاهرها"
+  events: "<#6b4a2f>رویدادهای جهان"

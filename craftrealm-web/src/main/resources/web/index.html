@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CraftRealm — Control Room</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- Login: a parchment card pinned to a deepslate wall -->
+<section id="login" class="screen">
+    <div class="card parchment login-card">
+        <h1 class="plank-header">CraftRealm</h1>
+        <p class="muted">Staff dashboard. Paste an operator token from <code>config.yml</code>.</p>
+        <label class="field">
+            <span>Token</span>
+            <input id="token" type="password" autocomplete="off" placeholder="web.tokens[0]">
+        </label>
+        <button id="login-button" class="hotbar-button">Unlock the workshop</button>
+        <p id="login-error" class="error" role="alert"></p>
+    </div>
+</section>
+
+<!-- Dashboard -->
+<main id="dashboard" class="screen hidden">
+    <header class="topbar plank-header">
+        <h1>CraftRealm Control Room</h1>
+        <div class="topbar-actions">
+            <span id="status-pill" class="pill">connecting…</span>
+            <button id="logout" class="hotbar-button small">Lock</button>
+        </div>
+    </header>
+
+    <section class="grid">
+        <!-- Server health -->
+        <article class="card parchment">
+            <h2 class="section-title">Server health</h2>
+            <div class="stat-row">
+                <div class="stat"><span class="stat-label">TPS</span><span id="tps" class="stat-value">–</span></div>
+                <div class="stat"><span class="stat-label">Players</span><span id="players-online" class="stat-value">–</span></div>
+                <div class="stat"><span class="stat-label">Uptime</span><span id="uptime" class="stat-value">–</span></div>
+            </div>
+            <div class="bar-block">
+                <span class="stat-label">Memory</span>
+                <div class="pixel-bar"><div id="ram-bar" class="pixel-bar-fill"></div></div>
+                <span id="ram-label" class="muted">–</span>
+            </div>
+        </article>
+
+        <!-- Economy -->
+        <article class="card parchment">
+            <h2 class="section-title">Economy</h2>
+            <div class="stat-row">
+                <div class="stat"><span class="stat-label">Circulation</span><span id="circulation" class="stat-value">–</span></div>
+                <div class="stat"><span class="stat-label">Accounts</span><span id="accounts" class="stat-value">–</span></div>
+                <div class="stat"><span class="stat-label">Inflation</span><span id="inflation" class="stat-value">–</span></div>
+            </div>
+            <canvas id="supply-chart" width="560" height="120" aria-label="Money supply history"></canvas>
+            <h3 class="section-subtitle">Top earners</h3>
+            <ol id="top-earners" class="list"></ol>
+        </article>
+
+        <!-- Players -->
+        <article class="card parchment span-2">
+            <h2 class="section-title">Players</h2>
+            <table class="block-table">
+                <thead>
+                <tr><th>Name</th><th>State</th><th>Balance</th><th>Shards</th><th>Ping</th><th>World</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="players-body"></tbody>
+            </table>
+        </article>
+
+        <!-- Reports -->
+        <article class="card parchment">
+            <h2 class="section-title">Report queue</h2>
+            <ul id="reports" class="list"></ul>
+        </article>
+
+        <!-- Audit -->
+        <article class="card parchment">
+            <h2 class="section-title">Audit trail</h2>
+            <ul id="audit" class="list mono"></ul>
+        </article>
+
+        <!-- Market -->
+        <article class="card parchment">
+            <h2 class="section-title">Market</h2>
+            <ul id="market" class="list mono"></ul>
+        </article>
+
+        <!-- Console -->
+        <article class="card parchment span-2">
+            <h2 class="section-title">Console</h2>
+            <div class="console-grid">
+                <pre id="console" class="console"></pre>
+                <div class="console-controls">
+                    <input id="console-input" type="text" placeholder="say Hello from the workshop">
+                    <button id="console-send" class="hotbar-button small">Run</button>
+                    <input id="broadcast-input" type="text" placeholder="Broadcast message">
+                    <button id="broadcast-send" class="hotbar-button small">Broadcast</button>
+                </div>
+            </div>
+        </article>
+    </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

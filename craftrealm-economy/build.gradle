@@ -1,0 +1,12 @@
+/*
+ * craftrealm-economy — currencies, Vault bridge, shops, bank, market, auctions,
+ * jobs, bounties and the physical note/coin items.
+ */
+dependencies {
+    api project(':craftrealm-core')
+
+    compileOnly('com.github.MilkBowl:VaultAPI:1.7') {
+        // VaultAPI drags in an ancient Bukkit artifact; the server provides it.
+        exclude group: 'org.bukkit', module: 'bukkit'
+    }
+}

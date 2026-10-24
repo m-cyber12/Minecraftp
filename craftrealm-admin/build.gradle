@@ -1,0 +1,7 @@
+/*
+ * craftrealm-admin — the in-game Control Room, punishments, reports,
+ * staff tooling, server health and the audit trail.
+ */
+dependencies {
+    api project(':craftrealm-core')
+}

@@ -1,0 +1,7 @@
+/*
+ * craftrealm-api — the only module other plugins should compile against.
+ * Contracts, immutable models and Bukkit events. No implementation.
+ */
+dependencies {
+    // Nothing beyond the Paper API supplied by the root build.
+}

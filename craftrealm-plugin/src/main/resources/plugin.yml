@@ -1,0 +1,253 @@
+# ===========================================================================
+#  CraftRealm — plugin descriptor
+#  `version` is injected by Gradle from gradle.properties. `api-version` is
+#  pinned to the 1.21 series: Paper resolves it to the newest 1.21.x it runs,
+#  so the same jar works on 1.21.1 through 1.21.8.
+# ===========================================================================
+name: CraftRealm
+version: '${version}'
+main: io.craftrealm.plugin.CraftRealmPlugin
+api-version: '1.21'
+author: CraftRealm
+description: A craftsman's economy, management panel and world toolkit for Paper servers.
+website: https://github.com/craftrealm
+softdepend:
+  - Vault
+  - PlaceholderAPI
+load: POSTWORLD
+
+commands:
+  craftrealm:
+    description: CraftRealm maintenance commands
+    usage: /craftrealm <reload|version|panel|save>
+    aliases: [cr]
+    permission: craftrealm.admin
+  balance:
+    description: Show a wallet balance
+    usage: /balance [player]
+    aliases: [bal, money]
+  pay:
+    description: Pay another player
+    usage: /pay <player> <amount>
+  baltop:
+    description: Richest players
+    usage: /baltop [page]
+    aliases: [balancetop, moneytop]
+  shop:
+    description: Open the market
+    usage: /shop [category]
+  sell:
+    description: Open the sell counter
+    usage: /sell
+    aliases: [sellall]
+  bank:
+    description: Open your bank vault
+    usage: /bank
+  auction:
+    description: Open the auction house
+    usage: /auction
+    aliases: [ah, auctions]
+  jobs:
+    description: Open the job board
+    usage: /jobs
+    aliases: [job, careers]
+  bounty:
+    description: Open the bounty board
+    usage: /bounty [player] [amount]
+    aliases: [bounties]
+  coins:
+    description: Mint or cash in coins and banknotes
+    usage: /coins <coin|note|redeem> [amount]
+    aliases: [cash, note]
+  admin:
+    description: Open the staff Control Room
+    usage: /admin [player]
+    aliases: [controlroom, staff]
+    permission: craftrealm.admin
+  punish:
+    description: Apply a punishment
+    usage: /punish <player> <warn|mute|kick|ban|tempban|freeze> [duration] <reason>
+    permission: craftrealm.staff.punish
+  warn:
+    description: Warn a player
+    usage: /warn <player> <reason>
+    permission: craftrealm.staff.warn
+  mute:
+    description: Mute a player
+    usage: /mute <player> [duration] <reason>
+    permission: craftrealm.staff.punish
+  kick:
+    description: Kick a player
+    usage: /kick <player> <reason>
+    permission: craftrealm.staff.punish
+  ban:
+    description: Ban a player
+    usage: /ban <player> <reason>
+    permission: craftrealm.staff.punish
+  unban:
+    description: Lift a ban
+    usage: /unban <player>
+    aliases: [pardon]
+    permission: craftrealm.staff.unban
+  vanish:
+    description: Toggle vanish
+    usage: /vanish
+    aliases: [v]
+    permission: craftrealm.staff.vanish
+  staffchat:
+    description: Talk to staff only
+    usage: /staffchat [message]
+    aliases: [sc]
+    permission: craftrealm.staff.chat
+  report:
+    description: Report a player
+    usage: /report <player> <reason>
+  reports:
+    description: Open the report queue
+    usage: /reports
+    permission: craftrealm.staff.reports
+  notes:
+    description: Read or write staff notes
+    usage: /notes <player> [text]
+    permission: craftrealm.staff.notes
+  audit:
+    description: Read the staff audit trail
+    usage: /audit [limit]
+    permission: craftrealm.staff.audit
+  claim:
+    description: Manage your land claims
+    usage: /claim <create|list|info|remove>
+    aliases: [claims, land]
+  chestshop:
+    description: Manage your chest shops
+    usage: /chestshop [list|remove <id>]
+    aliases: [myshops]
+  quests:
+    description: Open the quest board
+    usage: /quests
+    aliases: [quest]
+  cosmetics:
+    description: Open the cosmetics shop
+    usage: /cosmetics [type]
+    aliases: [cosmetic, titles]
+  season:
+    description: Show the season leaderboard
+    usage: /season
+    aliases: [seasons, leaderboard]
+  events:
+    description: Show the world events board
+    usage: /events [stop <id>]
+    aliases: [event]
+  treasure:
+    description: Treasure hunts
+    usage: /treasure <hint|hide|list>
+    aliases: [hunt]
+
+permissions:
+  craftrealm.use:
+    description: Basic economy commands
+    default: true
+    children:
+      craftrealm.economy.coins: true
+      craftrealm.shop: true
+      craftrealm.quests: true
+      craftrealm.claims: true
+      craftrealm.cosmetics: true
+      craftrealm.seasons: true
+      craftrealm.events: true
+      craftrealm.treasure: true
+
+  craftrealm.admin:
+    description: Full access to the Control Room and maintenance commands
+    default: op
+    children:
+      craftrealm.staff.punish: true
+      craftrealm.staff.warn: true
+      craftrealm.staff.unban: true
+      craftrealm.staff.vanish: true
+      craftrealm.staff.chat: true
+      craftrealm.staff.reports: true
+      craftrealm.staff.notes: true
+      craftrealm.staff.audit: true
+      craftrealm.claims.bypass: true
+      craftrealm.events.admin: true
+      craftrealm.treasure.admin: true
+      craftrealm.shop.limit-bypass: true
+
+  craftrealm.staff.punish:
+    description: Warn, mute, kick and ban
+    default: op
+  craftrealm.staff.warn:
+    description: Issue warnings
+    default: op
+  craftrealm.staff.unban:
+    description: Lift bans
+    default: op
+  craftrealm.staff.vanish:
+    description: Toggle vanish
+    default: op
+  craftrealm.staff.vanish.see:
+    description: See vanished staff
+    default: op
+  craftrealm.staff.chat:
+    description: Use staff chat
+    default: op
+  craftrealm.staff.reports:
+    description: Handle the report queue
+    default: op
+  craftrealm.staff.notes:
+    description: Read and write staff notes
+    default: op
+  craftrealm.staff.audit:
+    description: Read the audit trail
+    default: op
+
+  craftrealm.tier.helper:
+    description: Staff tier — helper
+    default: false
+  craftrealm.tier.mod:
+    description: Staff tier — moderator
+    default: false
+  craftrealm.tier.admin:
+    description: Staff tier — administrator
+    default: false
+  craftrealm.tier.owner:
+    description: Staff tier — owner
+    default: false
+
+  craftrealm.claims.bypass:
+    description: Build in any claim
+    default: op
+  craftrealm.events.admin:
+    description: Start and stop world events
+    default: op
+  craftrealm.treasure.admin:
+    description: Hide treasure caches
+    default: op
+  craftrealm.shop.limit-bypass:
+    description: Ignore the chest shop limit
+    default: op
+  craftrealm.economy.coins:
+    description: Mint and redeem coins and notes
+    default: true
+  craftrealm.shop:
+    description: Use the market and chest shops
+    default: true
+  craftrealm.quests:
+    description: Use the quest board
+    default: true
+  craftrealm.claims:
+    description: Use land claims
+    default: true
+  craftrealm.cosmetics:
+    description: Use the cosmetics shop
+    default: true
+  craftrealm.seasons:
+    description: View the season leaderboard
+    default: true
+  craftrealm.events:
+    description: View the events board
+    default: true
+  craftrealm.treasure:
+    description: Search for treasure
+    default: true

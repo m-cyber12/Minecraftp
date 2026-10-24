@@ -1,0 +1,79 @@
+/*
+ * CraftRealm — root build script.
+ *
+ * Everything shared by the modules lives here: repositories, the Java 21
+ * toolchain, encoding/compiler flags, the Paper API dependency and JUnit.
+ * Feature modules only declare their own extra dependencies.
+ */
+
+plugins {
+    id 'java'
+}
+
+allprojects {
+    group = project.findProperty('projectGroup') ?: 'io.craftrealm'
+    version = project.findProperty('projectVersion') ?: '1.0.0'
+
+    repositories {
+        mavenCentral()
+        // Paper / Adventure / MiniMessage
+        maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
+        // VaultAPI
+        maven { url = uri('https://jitpack.io') }
+    }
+}
+
+subprojects {
+    apply plugin: 'java-library'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+        withSourcesJar()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 21
+        // Fail loudly on the things that bite plugin authors: unchecked misuse of
+        // raw Bukkit types and silent deprecation drift.
+        options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked', '-parameters']
+    }
+
+    tasks.withType(Javadoc).configureEach {
+        options.encoding = 'UTF-8'
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            exceptionFormat = 'full'
+        }
+    }
+
+    dependencies {
+        // The Paper API is provided by the server at runtime — never bundled.
+        compileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
+
+        testImplementation platform("org.junit:junit-bom:${junitVersion}")
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        // Unit tests that touch Bukkit utility types get a compile-time API.
+        testCompileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
+    }
+
+    // Keep module jars lean; the shipping jar is produced by :craftrealm-plugin.
+    jar {
+        archiveBaseName = "CraftRealm-${project.name - 'craftrealm-'}"
+    }
+}
+
+// `./gradlew build` in the root also assembles the distributable plugin jar.
+tasks.register('dist') {
+    group = 'build'
+    description = 'Builds the shaded CraftRealm.jar ready to drop into plugins/'
+    dependsOn ':craftrealm-plugin:shadowJar'
+}

@@ -1,0 +1,821 @@
+# ===========================================================================
+#  CraftRealm — English (en_US)
+# ---------------------------------------------------------------------------
+#  Every line is MiniMessage: https://docs.advntr.dev/minimessage/format.html
+#  Placeholders are written {like-this} and are filled by the plugin. Player
+#  names and reasons are escaped before insertion, so a player cannot inject
+#  formatting.
+#
+#  Colour palette (the craftsman's workshop):
+#    oak #b07d4f · spruce #6b4a2f · deepslate #36393d · redstone #c0392b
+#    gold #e8b339 · copper #c77b53 · emerald #2fbf71 · lava #f26b21
+#    parchment #e8d8b0
+# ===========================================================================
+
+meta:
+  locale: en_US
+  name: English
+
+# ---------------------------------------------------------------- framework
+command:
+  usage: "<#e8d8b0>Usage:</#e8d8b0> <white>{usage}"
+  unknown: "<#c0392b>No such command:</#c0392b> <white>{input}"
+  no-permission: "<#c0392b>You do not have permission to do that.</#c0392b>"
+  player-only: "<#f26b21>That command only works for players.</#f26b21>"
+  invalid-amount: "<#c0392b>\"{input}\" is not a valid amount.</#c0392b>"
+  invalid-number: "<#c0392b>\"{input}\" is not a valid number.</#c0392b>"
+  cooldown: "<#f26b21>Slow down — try again in {seconds}s.</#f26b21>"
+  error: "<#c0392b>That did not work: {error}</#c0392b>"
+  help-header: "<#e8b339>CraftRealm commands</#e8b339>"
+  help-entry: "<#6b4a2f>·</#6b4a2f> <white>{usage}</white> <dark_gray>{description}</dark_gray>"
+  unknown-player: "<#c0392b>No player named {player}.</#c0392b>"
+
+gui:
+  previous: "<#b07d4f>« Previous page"
+  next: "<#b07d4f>Next page »"
+  close: "<#c0392b>Close"
+  back: "<#b07d4f>Back"
+  cancel: "<#c0392b>Cancel"
+  confirm: "<#2fbf71>Confirm"
+  page: "<#6b4a2f>Page {page} of {pages}"
+  empty: "<#6b4a2f>Nothing here yet."
+
+currency:
+  name: "Crowns"
+  symbol: "⛃"
+  format:
+    amount: "{amount} ⛃"
+
+# ------------------------------------------------------------ economy results
+economy:
+  result:
+    ok: "<#2fbf71>Done.</#2fbf71>"
+    invalid_amount: "<#c0392b>That amount is not valid.</#c0392b>"
+    insufficient_funds: "<#c0392b>You do not have enough Crowns for that.</#c0392b>"
+    limit_exceeded: "<#f26b21>That is above the per-transaction limit.</#f26b21>"
+    rate_limited: "<#f26b21>You are moving money too quickly — wait a moment.</#f26b21>"
+    self_transfer: "<#f26b21>You cannot pay yourself.</#f26b21>"
+    duplicate_operation: "<#f26b21>That was already processed.</#f26b21>"
+    account_frozen: "<#c0392b>Your account is frozen.</#c0392b>"
+    no_account: "<#c0392b>No account found for that player.</#c0392b>"
+    error: "<#c0392b>The economy could not complete that. Nothing was changed.</#c0392b>"
+  balance:
+    header: "<#e8b339>Purse of {player}</#e8b339>"
+    wallet: "<#6b4a2f>·</#6b4a2f> <#e8b339>Wallet</#e8b339> <white>{amount}</white>"
+    bank: "<#6b4a2f>·</#6b4a2f> <#c77b53>Vault</#c77b53> <white>{amount}</white>"
+    shards: "<#6b4a2f>·</#6b4a2f> <#2fbf71>Shards</#2fbf71> <white>{amount}</white>"
+  baltop:
+    header: "<#e8b339>Richest in the realm</#e8b339>"
+    entry: "<#6b4a2f>{rank}.</#6b4a2f> <white>{player}</white> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    empty: "<#6b4a2f>No accounts have been opened yet.</#6b4a2f>"
+  pay:
+    self: "<#f26b21>You cannot pay yourself.</#f26b21>"
+    too-small: "<#c0392b>The minimum transfer is {min}.</#c0392b>"
+    sent: "<#2fbf71>Sent {amount} to {player}.</#2fbf71> <dark_gray>(balance: {balance})</dark_gray>"
+    received: "<#2fbf71>{player} sent you {amount}.</#2fbf71> <dark_gray>(balance: {balance})</dark_gray>"
+
+# ------------------------------------------------------------------ /balance
+balance:
+  self: "<#e8b339>Wallet:</#e8b339> <white>{balance}</white>"
+  self-full: "<#e8b339>Wallet:</#e8b339> <white>{balance}</white> <dark_gray>·</dark_gray> <#2fbf71>Shards:</#2fbf71> <white>{shards}</white> <dark_gray>·</dark_gray> <#c77b53>Bank:</#c77b53> <white>{bank}</white>"
+  other: "<#e8b339>{player}</#e8b339> has <white>{balance}</white>"
+  hidden: "<#c0392b>That player keeps their balance private.</#c0392b>"
+
+# ---------------------------------------------------------------------- /pay
+pay:
+  sent: "<#2fbf71>Sent {amount} to {player}.</#2fbf71> <dark_gray>(balance: {balance})</dark_gray>"
+  received: "<#2fbf71>{player} sent you {amount}.</#2fbf71> <dark_gray>(balance: {balance})</dark_gray>"
+  minimum: "<#c0392b>The minimum transfer is {minimum}.</#c0392b>"
+  offline: "<#c0392b>{player} is not online.</#c0392b>"
+  confirm: "<#f26b21>{amount} is a large transfer — type the command again within 30s to confirm.</#f26b21>"
+
+# ------------------------------------------------------------------- /baltop
+baltop:
+  header: "<#e8b339>Richest in the realm</#e8b339> <dark_gray>(page {page}/{pages})</dark_gray>"
+  entry: "<#6b4a2f>{rank}.</#6b4a2f> <white>{player}</white> <dark_gray>—</dark_gray> <#e8b339>{balance}</#e8b339>"
+  empty: "<#6b4a2f>No accounts have been opened yet.</#6b4a2f>"
+  you: "<#2fbf71>You are #{rank} with {balance}.</#2fbf71>"
+
+# --------------------------------------------------------------------- /shop
+shop:
+  title: "<#6b4a2f>Market Hall"
+  category:
+    name: "<#e8b339>{category}</#e8b339>"
+    lore: "<#6b4a2f>Click to browse.</#6b4a2f>"
+    empty: "<#6b4a2f>This shelf is empty.</#6b4a2f>"
+  item:
+    name: "<white>{item}</white>"
+    lore: |-
+      <#6b4a2f>Buy:</#6b4a2f> <white>{buy}</white>
+      <#6b4a2f>Sell:</#6b4a2f> <white>{sell}</white>
+      <#6b4a2f>Trend:</#6b4a2f> <white>{trend}</white>
+      <dark_gray>Left-click buy 1 · Right-click sell 1
+      Shift-click for a stack</dark_gray>
+  bought: "<#2fbf71>Bought {amount}× {item} for {total}.</#2fbf71>"
+  sold: "<#2fbf71>Sold {amount}× {item} for {total}.</#2fbf71>"
+  sell-button:
+    name: "<#2fbf71>Sell everything in your hand"
+    lore: "<#6b4a2f>Opens the sell counter.</#6b4a2f>"
+  trend:
+    up: "<#2fbf71>▲ rising"
+    down: "<#f26b21>▼ falling"
+    flat: "<#6b4a2f>▬ steady"
+  disabled: "<#c0392b>The market is closed right now.</#c0392b>"
+  blacklisted: "<#c0392b>That item cannot be traded.</#c0392b>"
+  quote:
+    lore: |-
+      <#6b4a2f>Market:</#6b4a2f> <white>{price}</white>
+      <#6b4a2f>Anchor:</#6b4a2f> <white>{base}</white>
+      <dark_gray>Prices drift back toward the anchor.</dark_gray>
+  unknown-category: "<#c0392b>No shelf named {category}.</#c0392b>"
+
+# --------------------------------------------------------------------- /sell
+sell:
+  title: "<#6b4a2f>Sell Counter"
+  info:
+    name: "<#e8b339>How selling works"
+    line: "<#6b4a2f>Drop items in the top rows, then close.</#6b4a2f>"
+    more: "<#6b4a2f>Prices move with supply and demand.</#6b4a2f>"
+    lore: |-
+      <#6b4a2f>Items:</#6b4a2f> <white>{items}</white>
+      <#6b4a2f>Payout:</#6b4a2f> <#2fbf71>{total}</#2fbf71>
+      <dark_gray>Close the counter to sell.</dark_gray>
+  close-lore: "<#2fbf71>Click to sell and close.</#2fbf71>"
+  nothing: "<#6b4a2f>There was nothing to sell.</#6b4a2f>"
+  result: "<#2fbf71>Sold {count} items for {total}.</#2fbf71>"
+  returned: "<#f26b21>Some items could not be sold and were returned.</#f26b21>"
+  confirm:
+    lore: |-
+      <#6b4a2f>Payout:</#6b4a2f> <#2fbf71>{total}</#2fbf71>
+      <dark_gray>Click to sell every item above.</dark_gray>
+  sold: "<#2fbf71>Sold everything for {total} — balance {balance}.</#2fbf71>"
+
+# --------------------------------------------------------------------- /bank
+bank:
+  title: "<#6b4a2f>Vault of Crowns"
+  vault:
+    name: "<#e8b339>Savings</#e8b339>"
+    lore: |-
+      <#6b4a2f>Balance:</#6b4a2f> <white>{balance}</white>
+      <#6b4a2f>Interest due:</#6b4a2f> <#2fbf71>{interest}</#2fbf71>
+      <#6b4a2f>Rate:</#6b4a2f> <white>{rate}% per {period}h</white>
+  deposit:
+    name: "<#2fbf71>Deposit</#2fbf71>"
+    lore: "<#6b4a2f>Left: 1,000 · Right: everything</#6b4a2f>"
+  withdraw:
+    name: "<#f26b21>Withdraw</#f26b21>"
+    lore: "<#6b4a2f>Left: 1,000 · Right: everything</#6b4a2f>"
+  interest:
+    name: "<#2fbf71>Interest</#2fbf71>"
+    lore: "<#6b4a2f>Credited automatically every period.</#6b4a2f>"
+  loan:
+    name: "<#e8b339>Loans</#e8b339>"
+    lore: |-
+      <#6b4a2f>Limit:</#6b4a2f> <white>{limit}</white>
+      <#6b4a2f>Daily rate:</#6b4a2f> <white>{rate}%</white>
+    active: "<#f26b21>Outstanding: {amount} due {due}</#f26b21>"
+    none: "<#6b4a2f>You have no open loans.</#6b4a2f>"
+    active-lore: |-
+      <#6b4a2f>Outstanding:</#6b4a2f> <#f26b21>{outstanding}</#f26b21>
+      <#6b4a2f>Principal:</#6b4a2f> <white>{principal}</white>
+      <#6b4a2f>Due:</#6b4a2f> <white>{due}</white>
+      <#6b4a2f>Left:</#6b4a2f> <white>{remaining}</white>
+    denied: "<#c0392b>The bank declined that loan.</#c0392b>"
+    not-eligible: "<#c0392b>You are not eligible for a loan yet.</#c0392b>"
+    repaid: "<#2fbf71>Repaid {amount} — {remaining} left.</#2fbf71>"
+    taken: "<#e8b339>Borrowed {amount}; you owe {owed} by {due}.</#e8b339>"
+  deposited: "<#2fbf71>Deposited {amount}.</#2fbf71>"
+  withdrawn: "<#2fbf71>Withdrew {amount}.</#2fbf71>"
+  loan-taken: "<#e8b339>Loan of {amount} issued — repay by {due}.</#e8b339>"
+  loan-repaid: "<#2fbf71>Repaid {amount}.</#2fbf71>"
+  loan-limit: "<#c0392b>Your limit is {limit}.</#c0392b>"
+  loan-overdue: "<#c0392b>A loan is overdue — a {penalty}% penalty was applied.</#c0392b>"
+  disabled: "<#c0392b>Loans are disabled on this server.</#c0392b>"
+
+# ------------------------------------------------------------------ /auction
+auction:
+  title: "<#6b4a2f>Auction House"
+  sell:
+    name: "<#2fbf71>List the item in your hand</#2fbf71>"
+    lore: |-
+      <#6b4a2f>Fee:</#6b4a2f> <white>{fee}</white>
+      <#6b4a2f>Sales tax:</#6b4a2f> <white>{tax}%</white>
+    listed: "<#2fbf71>{item} listed at {price}.</#2fbf71>"
+    empty-hand: "<#c0392b>Hold the item you want to auction.</#c0392b>"
+    changed-hand: "<#f26b21>The item in your hand changed — start again.</#f26b21>"
+    item-moved: "<#f26b21>Keep the item in your hand until it is listed.</#f26b21>"
+    failed: "<#c0392b>The listing could not be created.</#c0392b>"
+  listing:
+    title: "<#6b4a2f>Set your price"
+    name: "<white>{item}</white>"
+    lore: |-
+      <#6b4a2f>Starting bid:</#6b4a2f> <white>{start}</white>
+      <#6b4a2f>Buy-now:</#6b4a2f> <white>{buy}</white>
+      <#6b4a2f>Ends in:</#6b4a2f> <white>{time}</white>
+      <dark_gray>Left: raise · Right: lower · Shift: confirm</dark_gray>
+    raise: "<#2fbf71>Starting bid raised to {amount}.</#2fbf71>"
+    lower: "<#f26b21>Starting bid lowered to {amount}.</#f26b21>"
+    confirm: "<#2fbf71>Listed for {amount} — good luck.</#2fbf71>"
+    too-many: "<#c0392b>You already have {count} active listings.</#c0392b>"
+    no-funds: "<#c0392b>You cannot pay the {fee} listing fee.</#c0392b>"
+    not-held: "<#c0392b>Hold the item you want to sell.</#c0392b>"
+    hint: |-
+      <dark_gray>Left: raise by 10% · Right: lower by 10%
+      Shift + left: confirm the listing</dark_gray>
+    quote: |-
+      <#6b4a2f>Starting bid:</#6b4a2f> <white>{start}</white>
+      <#6b4a2f>Buy-now:</#6b4a2f> <white>{buy}</white>
+      <#6b4a2f>Fee:</#6b4a2f> <white>{fee}</white>
+    confirm-lore: |-
+      <#6b4a2f>Fee charged now:</#6b4a2f> <white>{fee}</white>
+      <dark_gray>Shift + click to list it.</dark_gray>
+  bid-placed: "<#2fbf71>Bid {amount} placed.</#2fbf71>"
+  bid-too-low: "<#c0392b>The minimum bid is {minimum}.</#c0392b>"
+  bought: "<#2fbf71>You bought {item} for {amount}.</#2fbf71>"
+  outbid: "<#f26b21>You were outbid on {item}.</#f26b21>"
+  expired: "<#6b4a2f>Your listing for {item} expired — it is waiting in your mailbox.</#6b4a2f>"
+  cancelled: "<#f26b21>Listing cancelled; the item is in your mailbox.</#f26b21>"
+  mailbox:
+    title: "<#6b4a2f>Mailbox"
+    name: "<white>{item}</white>"
+    info: "<#6b4a2f>Collect what the auction house owes you.</#6b4a2f>"
+    item:
+      name: "<white>{item}</white>"
+      lore: "<#2fbf71>Click to collect.</#2fbf71>"
+    money:
+      name: "<#e8b339>{amount}</#e8b339>"
+      lore: "<#2fbf71>Click to collect.</#2fbf71>"
+    collected: "<#2fbf71>Collected {what}.</#2fbf71>"
+    full: "<#f26b21>Your inventory is full — make room first.</#f26b21>"
+    empty: "<#6b4a2f>Your mailbox is empty.</#6b4a2f>"
+    lore: "<#6b4a2f>{count} uncollected entries.</#6b4a2f>"
+    entry:
+      lore: |-
+        <#6b4a2f>{note}</#6b4a2f>
+        <dark_gray>Arrived {time}</dark_gray>
+
+# --------------------------------------------------------------------- /jobs
+jobs:
+  title: "<#6b4a2f>Careers"
+  entry:
+    name: "<#e8b339>{job}</#e8b339> <dark_gray>(level {level})</dark_gray>"
+    unit: "blocks"
+    lore: |-
+      <#6b4a2f>Level:</#6b4a2f> <white>{level}/{max}</white>
+      <#6b4a2f>Progress:</#6b4a2f> <white>{xp}/{required}</white>
+      <#6b4a2f>Multiplier:</#6b4a2f> <#2fbf71>×{multiplier}</#2fbf71>
+      <#6b4a2f>Earned today:</#6b4a2f> <white>{earned}</white>
+  how:
+    title: "<#e8b339>How jobs pay"
+    lore: |-
+      <#6b4a2f>Work in the world and get paid in Crowns.</#6b4a2f>
+      <#6b4a2f>Levels raise your multiplier up to {max}×.</#6b4a2f>
+      <#6b4a2f>Blocks you place yourself never pay.</#6b4a2f>
+  level-up: "<#2fbf71>{job} reached level {level}!</#2fbf71>"
+  cap: "<#f26b21>{job} hit its daily cap — it pays again tomorrow.</#f26b21>"
+  switched: "<#e8b339>You now follow {job}.</#e8b339>"
+  miner:
+    name: "<#6b4a2f>Miner</#6b4a2f>"
+  farmer:
+    name: "<#2fbf71>Farmer</#2fbf71>"
+  hunter:
+    name: "<#c0392b>Hunter</#c0392b>"
+  fisher:
+    name: "<#c77b53>Fisher</#c77b53>"
+  builder:
+    name: "<#e8b339>Builder</#e8b339>"
+
+# ------------------------------------------------------------------- /bounty
+bounty:
+  title: "<#6b4a2f>Bounty Board"
+  entry:
+    name: "<#c0392b>{player}</#c0392b> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    lore: "<#6b4a2f>Placed {when} by {placer}</#6b4a2f>"
+    hint: "<#6b4a2f>Raise the bounty on {player} with</#6b4a2f> <#e8b339>{command}</#e8b339>"
+  empty:
+    name: "<#6b4a2f>No open bounties.</#6b4a2f>"
+    lore: "<#6b4a2f>Place one with /bounty place <player> <amount>.</#6b4a2f>"
+  how:
+    name: "<#e8b339>How bounties work"
+    lore: |-
+      <#6b4a2f>Escrowed when placed, paid to the killer.</#6b4a2f>
+      <#6b4a2f>Fee:</#6b4a2f> <white>{fee}%</white>
+  placed: "<#e8b339>Bounty of {amount} placed on {player}.</#e8b339>"
+  claimed: "<#e8b339>You claimed the {amount} bounty on {player}.</#e8b339>"
+  claimed-broadcast: "<#e8b339>{killer}</#e8b339> <#6b4a2f>collected the</#6b4a2f> <white>{amount}</white> <#6b4a2f>bounty on</#6b4a2f> <#c0392b>{player}</#c0392b>"
+  too-small: "<#c0392b>The minimum bounty is {minimum}.</#c0392b>"
+  too-large: "<#c0392b>The maximum bounty is {maximum}.</#c0392b>"
+  self: "<#f26b21>You cannot put a bounty on yourself.</#f26b21>"
+  none: "<#6b4a2f>There is no bounty on that player.</#6b4a2f>"
+
+# -------------------------------------------------------------- coins/notes
+coins:
+  minted-coin: "<#e8b339>Minted a coin worth {amount}.</#e8b339>"
+  minted-note: "<#e8b339>Signed a banknote worth {amount}.</#e8b339>"
+  redeemed: "<#2fbf71>Cashed in {amount}. Balance: {balance}</#2fbf71>"
+  already-redeemed: "<#f26b21>That note has already been cashed in.</#f26b21>"
+  forged: "<#c0392b>That note's signature is invalid.</#c0392b>"
+  invalid: "<#c0392b>That is not a CraftRealm coin or note.</#c0392b>"
+  hold-one: "<#f26b21>Hold exactly one coin or note to cash it in.</#f26b21>"
+
+item:
+  coin:
+    name: "<#e8b339>Gold Coin</#e8b339>"
+    lore: |-
+      <#6b4a2f>Worth:</#6b4a2f> <white>{amount}</white>
+      <#6b4a2f>Right-click to deposit.</#6b4a2f>
+      <dark_gray>Serial {id}</dark_gray>
+  note:
+    name: "<#e8d8b0>Banknote</#e8d8b0>"
+    lore: |-
+      <#6b4a2f>Promise to pay the bearer:</#6b4a2f> <white>{amount}</white>
+      <#6b4a2f>Issued by:</#6b4a2f> <white>{issuer}</white>
+      <#6b4a2f>Right-click to deposit.</#6b4a2f>
+      <dark_gray>Serial {id}</dark_gray>
+
+# -------------------------------------------------------------------- claims
+claims:
+  gui:
+    title: "<#6b4a2f>Your Land"
+    entry:
+      name: "<#e8b339>Claim #{id}</#e8b339>"
+      lore: |-
+        <#6b4a2f>World:</#6b4a2f> <white>{world}</white>
+        <#6b4a2f>Chunk:</#6b4a2f> <white>{x}, {z}</white>
+        <#6b4a2f>Area:</#6b4a2f> <white>{area} blocks</white>
+        <#6b4a2f>Upkeep:</#6b4a2f> <white>{upkeep}/day</white>
+        <#6b4a2f>Paid until:</#6b4a2f> <white>{paid}</white>
+        <#6b4a2f>State:</#6b4a2f> <white>{stage}</white>
+        <dark_gray>Shift-click to abandon.</dark_gray>
+    empty: "<#6b4a2f>You do not own any land yet.</#6b4a2f>"
+    new:
+      name: "<#2fbf71>Claim the land here</#2fbf71>"
+      lore: "<#6b4a2f>Stand where you want the centre, then run /claim create 4</#6b4a2f>"
+      hint: "<#e8b339>/claim create <radius></#e8b339> claims a square around you."
+  created: "<#2fbf71>Claimed {area} blocks — upkeep {upkeep} per day.</#2fbf71>"
+  buying: "<#e8b339>Claiming {area} blocks for {price}…</#e8b339>"
+  failed: "<#c0392b>Claim failed: {reason}</#c0392b>"
+  protected: "<#c0392b>This land belongs to someone else.</#c0392b>"
+  free: "<#6b4a2f>This land is unclaimed.</#6b4a2f>"
+  info: "<#e8b339>Owned by {owner}</#e8b339> <dark_gray>·</dark_gray> <white>{area} blocks</white> <dark_gray>·</dark_gray> <#6b4a2f>upkeep {upkeep}/day, paid until {paid}</#6b4a2f>"
+  removed: "<#f26b21>Claim released.</#f26b21>"
+  not-found: "<#c0392b>No such claim.</#c0392b>"
+  list-header: "<#e8b339>Your claims</#e8b339> <dark_gray>({count})</dark_gray>"
+  list-entry: "<#6b4a2f>#{id}</#6b4a2f> <white>{world} {x},{z}</white> <dark_gray>·</dark_gray> <white>{area} blocks</white> <dark_gray>·</dark_gray> <#6b4a2f>stage {stage}, paid {paid}</#6b4a2f>"
+  upkeep-missed: "<#f26b21>Upkeep for claim #{id} could not be paid.</#f26b21>"
+
+# ------------------------------------------------------------------- quests
+quests:
+  gui:
+    title: "<#6b4a2f>Quest Board"
+    header: "<#e8b339>Daily and weekly work</#e8b339>"
+    header-lore: |-
+      <#6b4a2f>Finish a quest, then click it to collect.</#6b4a2f>
+      <#6b4a2f>Daily quests expire at midnight.</#6b4a2f>
+    entry:
+      name: "<white>{title}</white>"
+      lore: |-
+        <#6b4a2f>Progress:</#6b4a2f> <white>{progress}</white>
+        <#6b4a2f>{bar}</#6b4a2f>
+        <#6b4a2f>Reward:</#6b4a2f> <#2fbf71>{reward}</#2fbf71>
+        <#6b4a2f>Expires in:</#6b4a2f> <white>{expires}</white>
+  not-complete: "<#f26b21>That quest is not finished yet.</#f26b21>"
+  claimed: "<#2fbf71>Quest complete: {title}.</#2fbf71>"
+  claim-failed: "<#c0392b>That quest could not be collected.</#c0392b>"
+  completed-broadcast: "<#e8b339>{player}</#e8b339> <#6b4a2f>completed a quest.</#6b4a2f>"
+
+# ----------------------------------------------------------------- seasons
+seasons:
+  gui:
+    title: "<#6b4a2f>The Season"
+    header:
+      name: "<#e8b339>Season {number}</#e8b339>"
+      lore: |-
+        <#6b4a2f>Days left:</#6b4a2f> <white>{days}</white> <dark_gray>({left})</dark_gray>
+        <#6b4a2f>Your rank:</#6b4a2f> <white>{rank}</white>
+        <#6b4a2f>Crowns earned count, not balance.</#6b4a2f>
+    entry:
+      name: "<#e8b339>#{rank} {player}</#e8b339>"
+      lore: |-
+        <#6b4a2f>Earned:</#6b4a2f> <white>{score}</white>
+        <#6b4a2f>Title:</#6b4a2f> <#c77b53>{title}</#c77b53>
+    empty: "<#6b4a2f>The season just started — no scores yet.</#6b4a2f>"
+  ended: "<#e8b339>Season {number} ended. Winner: {player} with {score}.</#e8b339>"
+  started: "<#2fbf71>Season {number} has begun — earn Crowns to climb.</#2fbf71>"
+
+# --------------------------------------------------------------- cosmetics
+cosmetics:
+  gui:
+    title: "<#6b4a2f>Cosmetics"
+    header: "<#e8b339>Titles and trails</#e8b339>"
+    header-lore: |-
+      <#6b4a2f>Paid for with Shards.</#6b4a2f>
+      <#6b4a2f>You hold:</#6b4a2f> <white>{shards} Shards</white>
+    entry:
+      name: "<white>{name}</white>"
+      lore: |-
+        <#6b4a2f>Type:</#6b4a2f> <white>{type}</white>
+        <#6b4a2f>Value:</#6b4a2f> <white>{value}</white>
+        <#6b4a2f>Cost:</#6b4a2f> <#e8b339>{price} Shards</#e8b339>
+        <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+    entry-owned:
+      name: "<#2fbf71>{name}</#2fbf71>"
+  bought: "<#2fbf71>Unlocked {name} for {price} Shards.</#2fbf71>"
+  buy-failed: "<#c0392b>Not enough Shards for {name}.</#c0392b>"
+  equipped: "<#2fbf71>{name} equipped.</#2fbf71>"
+  equip-failed: "<#c0392b>That cosmetic could not be equipped.</#c0392b>"
+  unequipped: "<#6b4a2f>{name} removed.</#6b4a2f>"
+
+# ------------------------------------------------------------------ events
+events:
+  gui:
+    title: "<#6b4a2f>World Events"
+    header: "<#e8b339>What is happening</#e8b339>"
+    header-lore: |-
+      <#6b4a2f>Running:</#6b4a2f> <white>{active}</white>
+      <dark_gray>Staff can start an event here.</dark_gray>
+    entry:
+      name: "<white>{event}</white>"
+      lore:
+        gold_rush: |-
+          <#e8b339>Ore sells for double while it runs.</#e8b339>
+          <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+        blood_moon: |-
+          <#c0392b>Mobs drop double Crowns.</#c0392b>
+          <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+        market_crash: |-
+          <#f26b21>Every price is suppressed.</#f26b21>
+          <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+        merchant_caravan: |-
+          <#c77b53>A trader carries rare goods.</#c77b53>
+          <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+    remaining: "<#f26b21>Ends in {time}</#f26b21>"
+    no-permission: "<#c0392b>Only staff can start events.</#c0392b>"
+  started: "<#e8b339>Started {event}.</#e8b339>"
+  stopped: "<#6b4a2f>Stopped {event}.</#6b4a2f>"
+  failed: "<#c0392b>{event} is already running.</#c0392b>"
+  stop: "<#6b4a2f>{event} has ended.</#6b4a2f>"
+  gold-rush:
+    start: "<#e8b339>A Gold Rush begins — ore sells for double!</#e8b339>"
+  blood-moon:
+    start: "<#c0392b>A Blood Moon rises — mobs drop double.</#c0392b>"
+  market-crash:
+    start: "<#f26b21>Market Crash — prices are down until it passes.</#f26b21>"
+  caravan:
+    start: "<#c77b53>A Merchant Caravan has arrived.</#c77b53>"
+
+# ---------------------------------------------------------------- treasure
+treasure:
+  found: "<#2fbf71>You found a treasure cache: {shards} Shards.</#2fbf71>"
+  broadcast: "<#e8b339>{player}</#e8b339> <#6b4a2f>found a hidden treasure and earned</#6b4a2f> <white>{shards} Shards</white>."
+  hidden: "<#2fbf71>Treasure #{id} hidden here for {shards} Shards.</#2fbf71>"
+  hint: "<#e8b339>Clue:</#e8b339> <white>{clue}</white> <dark_gray>(about {distance} blocks away)</dark_gray>"
+  none: "<#6b4a2f>No treasure has been hidden nearby.</#6b4a2f>"
+  list-header: "<#e8b339>Hidden treasures</#e8b339> <dark_gray>({count})</dark_gray>"
+  list-entry: "<#6b4a2f>#{id}</#6b4a2f> <white>{world} {x},{z}</white> <dark_gray>·</dark_gray> <white>{shards} Shards</white>"
+  disabled: "<#c0392b>Treasure hunts are disabled.</#c0392b>"
+
+# -------------------------------------------------------------- chest shops
+shops:
+  created: "<#2fbf71>Shop created: {stock}× {item} at {price} each.</#2fbf71>"
+  removed: "<#f26b21>Shop removed and stock returned.</#f26b21>"
+  exists: "<#c0392b>This chest already has a shop.</#c0392b>"
+  need-chest: "<#c0392b>Put the sign on a chest.</#c0392b>"
+  empty-chest: "<#c0392b>Put the goods in the chest before creating the sign.</#c0392b>"
+  bad-price: "<#c0392b>Line 2 must be a price, e.g. 12.5.</#c0392b>"
+  limit: "<#f26b21>You have reached your shop limit.</#f26b21>"
+  locked: "<#6b4a2f>The shop's stock is kept in the ledger — click the sign to buy.</#6b4a2f>"
+  not-owner: "<#c0392b>That is not your shop.</#c0392b>"
+  not-found: "<#c0392b>No such shop.</#c0392b>"
+  out-of-stock: "<#f26b21>That shop is out of stock.</#f26b21>"
+  bought: "<#2fbf71>Bought {amount}× {item} for {total}.</#2fbf71>"
+  list-header: "<#e8b339>Your shops</#e8b339> <dark_gray>({count})</dark_gray>"
+  list-entry: "<#6b4a2f>#{id}</#6b4a2f> <white>{world} {x},{z}</white> <dark_gray>·</dark_gray> <white>{price} each</white> <dark_gray>·</dark_gray> <white>{stock} in stock</white>"
+  gui:
+    title: "<#6b4a2f>Chest Shop"
+    broken: "<#c0392b>This shop's goods could not be read.</#c0392b>"
+    preview:
+      name: "<white>{item}</white>"
+      lore: |-
+        <#6b4a2f>Price:</#6b4a2f> <#e8b339>{price} each</#e8b339>
+        <#6b4a2f>Stock:</#6b4a2f> <white>{stock}</white>
+        <#6b4a2f>Seller:</#6b4a2f> <white>{seller}</white>
+    buy:
+      name: "<#2fbf71>Buy {amount}</#2fbf71>"
+      lore: |-
+        <#6b4a2f>Cost:</#6b4a2f> <white>{cost}</white>
+        <#6b4a2f>Left in stock:</#6b4a2f> <white>{stock}</white>
+
+# --------------------------------------------------------------- moderation
+punish:
+  warned: "<#f26b21>{player} was warned ({action}).</#f26b21>"
+  applied: "<#f26b21>{player}: {type} ({duration}).</#f26b21>"
+  warned-self: "<#f26b21>You were warned: {reason} (warning {count}).</#f26b21>"
+  muted: "<#c0392b>You are muted.</#c0392b>"
+  still-muted: "<#c0392b>You are still muted on this server.</#c0392b>"
+  frozen: "<#f26b21>You have been frozen by staff.</#f26b21>"
+  unfrozen: "<#2fbf71>You are free to move again.</#2fbf71>"
+  frozen-blocked: "<#c0392b>You cannot do that while frozen.</#c0392b>"
+  kicked: "<#c0392b>You were removed: {reason}</#c0392b>"
+  banned-kick: "<#c0392b>You were banned: {reason} (expires: {expires})</#c0392b>"
+  banned-screen: "<#c0392b>You are banned from this server.</#c0392b>\n<#6b4a2f>Reason:</#6b4a2f> <white>{reason}</white>\n<#6b4a2f>Appeal:</#6b4a2f> <white>{appeal}</white>"
+  lifted: "<#2fbf71>Your {type} was lifted.</#2fbf71>"
+  unbanned: "<#2fbf71>{player} is unbanned.</#2fbf71>"
+  not-banned: "<#6b4a2f>{player} was not banned.</#6b4a2f>"
+
+staff:
+  vanish-on: "<#6b4a2f>You are now invisible to players.</#6b4a2f>"
+  vanish-off: "<#6b4a2f>You are visible again.</#6b4a2f>"
+  chat-on: "<#e8b339>Staff chat enabled.</#e8b339>"
+  chat-off: "<#6b4a2f>Staff chat disabled.</#6b4a2f>"
+  chat-format: "<#c0392b>[STAFF]</#c0392b> <white>{player}</white> <dark_gray>›</dark_gray> <#e8d8b0>{message}</#e8d8b0>"
+
+report:
+  submitted: "<#2fbf71>Report filed about {player}. Thank you.</#2fbf71>"
+  self: "<#f26b21>You cannot report yourself.</#f26b21>"
+  cooldown: "<#f26b21>You just filed a report — give staff a moment.</#f26b21>"
+  staff-alert: "<#f26b21>New report:</#f26b21> <white>{reporter} → {target}</white> <dark_gray>(/reports)</dark_gray>"
+
+# --------------------------------------------------------------- admin panel
+admin:
+  room:
+    title: "<#6b4a2f>Control Room"
+    players:
+      name: "<#e8b339>Players</#e8b339>"
+      lore: "<#6b4a2f>Inventory, balance, teleport, moderation.</#6b4a2f>"
+    economy:
+      name: "<#e8b339>Economy</#e8b339>"
+      lore: "<#6b4a2f>Circulation, inflation, alert queue.</#6b4a2f>"
+    punishments:
+      name: "<#e8b339>Punishments</#e8b339>"
+      lore: "<#6b4a2f>Reports, warnings and the escalation ladder.</#6b4a2f>"
+    world:
+      name: "<#e8b339>World</#e8b339>"
+      lore: "<#6b4a2f>Per-world counters and weather.</#6b4a2f>"
+    health:
+      name: "<#e8b339>Server health</#e8b339>"
+      lore: "<#6b4a2f>TPS, memory and the worst chunks.</#6b4a2f>"
+    logs:
+      name: "<#e8b339>Audit log</#e8b339>"
+      lore: "<#6b4a2f>Every staff action, newest first.</#6b4a2f>"
+    players-count: "<#6b4a2f>{count} online</#6b4a2f>"
+    economy-count: "<#6b4a2f>Your wallet: {amount}</#6b4a2f>"
+    world-count: "<#6b4a2f>{count} worlds loaded</#6b4a2f>"
+    health-tps: "<#6b4a2f>TPS:</#6b4a2f> <white>{tps}</white>"
+    health-ram: "<#6b4a2f>Memory:</#6b4a2f> <white>{used}/{max} MB</white>"
+    punishments-hint: "<#6b4a2f>Reports are waiting inside.</#6b4a2f>"
+    logs-hint: "<#6b4a2f>Read-only history.</#6b4a2f>"
+    strip:
+      name: "<#e8b339>Live status</#e8b339>"
+      lore: |-
+        <#6b4a2f>TPS:</#6b4a2f> <white>{tps}</white>
+        <#6b4a2f>Memory:</#6b4a2f> <white>{ram}</white>
+        <#6b4a2f>Uptime:</#6b4a2f> <white>{uptime}</white>
+        <#6b4a2f>Players:</#6b4a2f> <white>{players}</white>
+  players:
+    title: "<#6b4a2f>Players"
+    empty: "<#6b4a2f>No players have joined yet.</#6b4a2f>"
+    entry:
+      name: "<white>{player}</white>"
+      lore: |-
+        <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+        <#6b4a2f>Wallet:</#6b4a2f> <white>{balance}</white>
+        <#6b4a2f>Shards:</#6b4a2f> <white>{shards}</white>
+        <#6b4a2f>Ping:</#6b4a2f> <white>{ping} ms</white>
+        <#6b4a2f>World:</#6b4a2f> <white>{world}</white>
+        <#6b4a2f>Last seen:</#6b4a2f> <white>{seen}</white>
+        <#6b4a2f>Flags:</#6b4a2f> <white>{flags}</white>
+  player:
+    title: "<#6b4a2f>{player}"
+    not-found: "<#c0392b>No player named {player}.</#c0392b>"
+    offline: "<#c0392b>That player is offline.</#c0392b>"
+    confirm-shift: "<#f26b21>Shift-click to confirm.</#f26b21>"
+    head:
+      name: "<#e8b339>{player}</#e8b339>"
+      lore: |-
+        <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+        <#6b4a2f>Wallet:</#6b4a2f> <white>{balance}</white>
+        <#6b4a2f>Shards:</#6b4a2f> <white>{shards}</white>
+        <#6b4a2f>Warnings:</#6b4a2f> <white>{warnings}</white>
+        <#6b4a2f>Known IPs:</#6b4a2f> <white>{ips}</white>
+        <#6b4a2f>World:</#6b4a2f> <white>{world}</white>
+    balance:
+      name: "<#e8b339>Adjust balance</#e8b339>"
+      lore: |-
+        <#6b4a2f>Left: +100 · Right: -100</#6b4a2f>
+        <#6b4a2f>Shift: 1,000</#6b4a2f>
+      done: "<#2fbf71>{player} now has {amount}.</#2fbf71>"
+    teleport:
+      name: "<#e8b339>Teleport to player</#e8b339>"
+      lore: "<#6b4a2f>Moves you to their location.</#6b4a2f>"
+    teleported: "<#2fbf71>Teleported to {player}.</#2fbf71>"
+    freeze:
+      name: "<#f26b21>Freeze</#f26b21>"
+      lore: "<#6b4a2f>Blocks movement, damage and commands.</#6b4a2f>"
+    froze: "<#f26b21>{player} is frozen.</#f26b21>"
+    unfroze: "<#2fbf71>{player} can move again.</#2fbf71>"
+    mute:
+      name: "<#f26b21>Mute</#f26b21>"
+      lore: "<#6b4a2f>Left: mute 1h · Right: unmute</#6b4a2f>"
+    unmuted: "<#2fbf71>{player} can speak again.</#2fbf71>"
+    inventory:
+      name: "<#e8b339>Inventories</#e8b339>"
+      lore: "<#6b4a2f>Left: inventory · Right: ender chest</#6b4a2f>"
+    notes:
+      name: "<#e8b339>Notes</#e8b339>"
+      lore: "<#6b4a2f>Read and write staff notes.</#6b4a2f>"
+      hint: "<#e8b339>/notes {player} <text></#e8b339> writes a note."
+    warn:
+      name: "<#f26b21>Warn</#f26b21>"
+      lore: |-
+        <#6b4a2f>Active warnings:</#6b4a2f> <white>{count}</white>
+        <dark_gray>Shift-click to apply.</dark_gray>
+      confirm: "<#f26b21>Shift-click the name tag to add a warning.</#f26b21>"
+      done: "<#2fbf71>Warning added to {player} (escalated: {action}).</#2fbf71>"
+    ips:
+      name: "<#e8b339>IP history</#e8b339>"
+      lore: "<#6b4a2f>{count} addresses on record.</#6b4a2f>"
+      header: "<#e8b339>Known addresses for {player}</#e8b339>"
+      entry: "<#6b4a2f>·</#6b4a2f> <white>{ip}</white>"
+    kick:
+      name: "<#c0392b>Kick</#c0392b>"
+      lore: "<#6b4a2f>Shift-click to kick.</#6b4a2f>"
+    ban:
+      name: "<#c0392b>Ban</#c0392b>"
+      lore: |-
+        <#6b4a2f>Left: 24h · Right: permanent</#6b4a2f>
+        <dark_gray>Shift-click to confirm.</dark_gray>
+    punished: "<#f26b21>{player}: {type} applied.</#f26b21>"
+    history:
+      name: "<#e8b339>History</#e8b339>"
+      lore: "<#6b4a2f>Past punishments for this player.</#6b4a2f>"
+      header: "<#e8b339>History for {player}</#e8b339>"
+      entry: "<#6b4a2f>{when}</#6b4a2f> <white>{type}</white> <dark_gray>—</dark_gray> <white>{reason}</white>"
+  inventory:
+    title: "<#6b4a2f>{player}'s inventory"
+    ender-title: "<#6b4a2f>{player}'s ender chest"
+    inspect: "<#6b4a2f>Slot contains {amount}× {item}.</#6b4a2f>"
+  economy:
+    title: "<#6b4a2f>Economy Dashboard"
+    circulation:
+      name: "<#e8b339>Money supply</#e8b339>"
+      lore: |-
+        <#6b4a2f>In circulation:</#6b4a2f> <white>{total}</white>
+        <#6b4a2f>Accounts:</#6b4a2f> <white>{accounts}</white>
+    inflation:
+      name: "<#e8b339>Inflation</#e8b339>"
+      lore: |-
+        <#6b4a2f>Change:</#6b4a2f> <white>{rate}</white>
+        <#6b4a2f>Trend:</#6b4a2f> <white>{sparkline}</white>
+    top:
+      name: "<#e8b339>Top earners</#e8b339>"
+      empty: "<#6b4a2f>No accounts yet.</#6b4a2f>"
+      entry: "<#6b4a2f>{rank}.</#6b4a2f> <white>{player}</white> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    alerts:
+      name: "<#f26b21>Suspicious transactions</#f26b21>"
+      lore: "<#6b4a2f>{count} above the alert threshold.</#6b4a2f>"
+      none: "<#2fbf71>Nothing suspicious.</#2fbf71>"
+      header: "<#f26b21>{count} large transactions</#f26b21>"
+      entry: "<#6b4a2f>{when}</#6b4a2f> <white>{type}</white> <dark_gray>—</dark_gray> <#e8b339>{amount}</#e8b339>"
+    market:
+      name: "<#e8b339>Market book</#e8b339>"
+      lore: "<#6b4a2f>Current prices against the anchor.</#6b4a2f>"
+    snapshot:
+      name: "<#e8b339>Record snapshot</#e8b339>"
+      lore: "<#6b4a2f>Shift-click to store today's money supply.</#6b4a2f>"
+      done: "<#2fbf71>Snapshot recorded.</#2fbf71>"
+  alerts:
+    title: "<#6b4a2f>Large transactions"
+    entry:
+      name: "<#f26b21>{amount}</#f26b21> <dark_gray>{type}</dark_gray>"
+      lore: |-
+        <#6b4a2f>Reason:</#6b4a2f> <white>{reason}</white>
+        <#6b4a2f>Ledger id:</#6b4a2f> <white>{id}</white>
+        <#6b4a2f>When:</#6b4a2f> <white>{when}</white>
+        <#6b4a2f>Server:</#6b4a2f> <white>{server}</white>
+        <#6b4a2f>State:</#6b4a2f> <white>{state}</white>
+      operation: "<#6b4a2f>Operation:</#6b4a2f> <white>{op}</white>"
+    already: "<#6b4a2f>That transaction was already reversed.</#6b4a2f>"
+    rolled-back: "<#2fbf71>Reversed {amount}.</#2fbf71>"
+    failed: "<#c0392b>That transaction could not be reversed.</#c0392b>"
+  market:
+    title: "<#6b4a2f>Market Book"
+    refresh: "<#b07d4f>Refresh"
+    entry:
+      name: "<white>{item}</white>"
+      lore: |-
+        <#6b4a2f>Price:</#6b4a2f> <white>{price}</white>
+        <#6b4a2f>Anchor:</#6b4a2f> <white>{base}</white>
+        <#6b4a2f>Trend:</#6b4a2f> <white>{trend}</white>
+        <#6b4a2f>Sold / bought:</#6b4a2f> <white>{sold} / {bought}</white>
+        <#6b4a2f>Pressure:</#6b4a2f> <white>{pressure}</white>
+        <#6b4a2f>Updated:</#6b4a2f> <white>{updated}</white>
+  health:
+    title: "<#6b4a2f>Server Health"
+    tps:
+      name: "<#e8b339>Ticks per second</#e8b339>"
+      lore: |-
+        <#6b4a2f>Now:</#6b4a2f> <white>{now}</white>
+        <#6b4a2f>{one}</#6b4a2f>
+        <#6b4a2f>5m:</#6b4a2f> <white>{five}</white> <dark_gray>·</dark_gray> <#6b4a2f>15m:</#6b4a2f> <white>{fifteen}</white>
+    ram:
+      name: "<#e8b339>Memory</#e8b339>"
+      lore: |-
+        <#6b4a2f>Used:</#6b4a2f> <white>{used} MB</white> <dark_gray>of</dark_gray> <white>{max} MB</white>
+        <#6b4a2f>{bar}</#6b4a2f>
+        <#6b4a2f>{percent} of the heap</#6b4a2f>
+    uptime:
+      name: "<#2fbf71>Uptime</#2fbf71>"
+      lore: |-
+        <#6b4a2f>Running for:</#6b4a2f> <white>{uptime}</white>
+        <#6b4a2f>Players:</#6b4a2f> <white>{players}</white>
+        <#6b4a2f>Worlds:</#6b4a2f> <white>{worlds}</white>
+    cleanup:
+      name: "<#f26b21>Clean up lag</#6b4a2f>"
+      lore: |-
+        <#6b4a2f>Removes entities from the worst chunks.</#6b4a2f>
+        <#6b4a2f>Only chunks above {threshold} entities.</#6b4a2f>
+        <dark_gray>Shift-click · right-click to include hostile mobs.</dark_gray>
+      done: "<#2fbf71>Removed {count} entities.</#2fbf71>"
+    hotspot:
+      name: "<#f26b21>Hot chunk {world} {x}, {z}</#f26b21>"
+      lore: |-
+        <#6b4a2f>Entities:</#6b4a2f> <white>{entities}</white>
+        <#6b4a2f>Mostly:</#6b4a2f> <white>{type}</white>
+        <dark_gray>Shift-click to sweep this chunk.</dark_gray>
+  world:
+    title: "<#6b4a2f>Worlds"
+    entry:
+      name: "<#e8b339>{world}</#e8b339>"
+      lore: |-
+        <#6b4a2f>Players:</#6b4a2f> <white>{players}</white>
+        <#6b4a2f>Chunks:</#6b4a2f> <white>{chunks}</white>
+        <#6b4a2f>Entities:</#6b4a2f> <white>{entities}</white>
+        <#6b4a2f>Time:</#6b4a2f> <white>{time}</white>
+        <#6b4a2f>Weather:</#6b4a2f> <white>{weather}</white>
+    weather: "<#6b4a2f>{world}: weather is now {weather}.</#6b4a2f>"
+    time: "<#6b4a2f>{world}: time of day set.</#6b4a2f>"
+    empty: "<#6b4a2f>No worlds are loaded.</#6b4a2f>"
+    entities:
+      name: "<#e8b339>Entities by category</#e8b339>"
+      empty: "<#6b4a2f>No entities loaded.</#6b4a2f>"
+      entry: "<#6b4a2f>{category}:</#6b4a2f> <white>{amount}</white>"
+  logs:
+    title: "<#6b4a2f>Audit Log"
+    entry:
+      name: "<white>{action}</white> <dark_gray>by {staff}</dark_gray>"
+      lore: |-
+        <#6b4a2f>Target:</#6b4a2f> <white>{target}</white>
+        <#6b4a2f>Detail:</#6b4a2f> <white>{detail}</white>
+        <#6b4a2f>When:</#6b4a2f> <white>{when}</white>
+        <#6b4a2f>Id:</#6b4a2f> <white>{id}</white>
+    empty: "<#6b4a2f>No staff actions recorded yet.</#6b4a2f>"
+    header: "<#e8b339>Audit trail</#e8b339> <dark_gray>({count})</dark_gray>"
+    chat-entry: "<#6b4a2f>{when}</#6b4a2f> <white>{staff}</white> <dark_gray>·</dark_gray> <#e8b339>{action}</#e8b339> <dark_gray>·</dark_gray> <white>{target}</white> <dark_gray>{detail}</dark_gray>"
+  punishments:
+    title: "<#6b4a2f>Reports and Punishments"
+    empty: "<#2fbf71>No open reports.</#2fbf71>"
+    resolved: "<#2fbf71>Report #{id} resolved.</#2fbf71>"
+    failed: "<#c0392b>Report #{id} could not be updated.</#c0392b>"
+    report:
+      name: "<#e8b339>Report #{id}</#e8b339>"
+      lore: |-
+        <#6b4a2f>Reporter:</#6b4a2f> <white>{reporter}</white>
+        <#6b4a2f>Accused:</#6b4a2f> <white>{target}</white>
+        <#6b4a2f>Reason:</#6b4a2f> <white>{reason}</white>
+        <#6b4a2f>Filed:</#6b4a2f> <white>{when}</white>
+        <dark_gray>Left: resolve · Right: reject.</dark_gray>
+    ladder:
+      name: "<#e8b339>Warning escalation</#e8b339>"
+      empty: "<#6b4a2f>No escalation rules configured.</#6b4a2f>"
+      entry: "<#6b4a2f>{warnings} warnings →</#6b4a2f> <white>{action}</white> <dark_gray>({duration})</dark_gray>"
+  notes:
+    added: "<#2fbf71>Note added about {player}.</#2fbf71>"
+    header: "<#e8b339>Notes about {player}</#e8b339> <dark_gray>({count})</dark_gray>"
+    entry: "<#6b4a2f>{when}</#6b4a2f> <dark_gray>·</dark_gray> <white>{text}</white>"
+  broadcast: "<#e8b339>Notice:</#e8b339> <white>{message}</white>"
+  reloaded: "<#2fbf71>Configuration and language files reloaded.</#2fbf71>"
+  reload-failed: "<#c0392b>Reload failed: {error}</#c0392b>"
+  version: "<#e8b339>CraftRealm</#e8b339> <white>v{version}</white>"
+  panel: "<#e8b339>Web panel:</#e8b339> <white>{state}</white> <dark_gray>on port {port}</dark_gray>"
+  saved: "<#2fbf71>Saved {count} market prices.</#2fbf71>"
+
+# ------------------------------------------------------------------ streaks
+streak:
+  reward: "<#e8b339>Day {day} of your streak — {amount} added.</#e8b339>"
+  milestone: "<#2fbf71>Streak milestone! +{shards} Shards.</#2fbf71>"
+
+# ------------------------------------------------------------------ shop / bank titles reused by commands
+title:
+  shop: "<#6b4a2f>Market Hall"
+  sell: "<#6b4a2f>Sell Counter"
+  bank: "<#6b4a2f>Vault of Crowns"
+  auction: "<#6b4a2f>Auction House"
+  jobs: "<#6b4a2f>Careers"
+  bounty: "<#6b4a2f>Bounty Board"
+  mailbox: "<#6b4a2f>Mailbox"
+  claims: "<#6b4a2f>Your Land"
+  quests: "<#6b4a2f>Quest Board"
+  season: "<#6b4a2f>The Season"
+  cosmetics: "<#6b4a2f>Cosmetics"
+  events: "<#6b4a2f>World Events"

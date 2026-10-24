@@ -1,0 +1,18 @@
+/*
+ * craftrealm-core — storage, domain logic, i18n and the GUI toolkit.
+ *
+ * The pure domain classes (Money, MarketPriceEngine, InterestCalculator,
+ * AuctionFeeCalculator, ClaimDecay, MessageBundle, ...) do not import Bukkit
+ * and are covered by unit tests in src/test/java.
+ */
+dependencies {
+    api project(':craftrealm-api')
+
+    // Connection pooling + drivers are bundled (relocated) into CraftRealm.jar.
+    implementation "com.zaxxer:HikariCP:${hikariVersion}"
+    implementation "org.xerial:sqlite-jdbc:${sqliteVersion}"
+    implementation "com.mysql:mysql-connector-j:${mysqlVersion}"
+
+    // Logging facade is provided by the server.
+    compileOnly 'org.slf4j:slf4j-api:2.0.13'
+}

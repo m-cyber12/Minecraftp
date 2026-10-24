@@ -1,0 +1,7 @@
+/*
+ * craftrealm-events — the creative layer: world events, land claims, chest
+ * shops, quests, seasons, cosmetics and treasure hunts.
+ */
+dependencies {
+    api project(':craftrealm-core')
+}

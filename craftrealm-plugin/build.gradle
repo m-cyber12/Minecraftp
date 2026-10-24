@@ -1,0 +1,83 @@
+/*
+ * craftrealm-plugin — the shipping artifact.
+ *
+ * Everything the server does not provide is shaded and relocated, so CraftRealm
+ * can never clash with another plugin's copy of HikariCP, Jetty or Javalin.
+ */
+plugins {
+    id 'com.gradleup.shadow' version '8.3.5'
+}
+
+dependencies {
+    implementation project(':craftrealm-api')
+    implementation project(':craftrealm-core')
+    implementation project(':craftrealm-economy')
+    implementation project(':craftrealm-admin')
+    implementation project(':craftrealm-events')
+    implementation project(':craftrealm-web')
+}
+
+// Resources (plugin.yml, config.yml, lang/*.yml) live in this module only.
+processResources {
+    filesMatching(['plugin.yml']) {
+        expand(version: project.version)
+    }
+}
+
+shadowJar {
+    archiveBaseName = 'CraftRealm'
+    archiveClassifier = ''
+    archiveVersion = project.version
+
+    // Relocate everything the server does not ship, keeping the plugin isolated.
+    relocate 'com.zaxxer.hikari', 'io.craftrealm.libs.hikari'
+    relocate 'io.javalin', 'io.craftrealm.libs.javalin'
+    relocate 'org.eclipse.jetty', 'io.craftrealm.libs.jetty'
+    relocate 'kotlin', 'io.craftrealm.libs.kotlin'
+    relocate 'org.jetbrains.annotations', 'io.craftrealm.libs.annotations'
+    relocate 'com.fasterxml.jackson', 'io.craftrealm.libs.jackson'
+
+    // JDBC drivers must keep their own package names: they load native
+    // libraries and service descriptors by absolute path.
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    exclude 'META-INF/versions/9/module-info.class'
+    exclude 'module-info.class'
+    exclude 'META-INF/LICENSE*', 'META-INF/NOTICE*'
+    exclude 'META-INF/maven/**'
+
+    mergeServiceFiles()
+
+    minimize {
+        // Reflectively loaded / service-loaded code that must survive shrinking.
+        exclude(dependency('org.xerial:sqlite-jdbc:.*'))
+        exclude(dependency('com.mysql:mysql-connector-j:.*'))
+        exclude(dependency('io.javalin:javalin:.*'))
+    }
+}
+
+// The plugin jar is the build output.
+artifacts {
+    archives shadowJar
+}
+
+assemble.dependsOn shadowJar
+build.dependsOn shadowJar
+
+// Copy the ready-to-use jar next to the project for convenience.
+tasks.register('collectJar', Copy) {
+    dependsOn shadowJar
+    from shadowJar.archiveFile
+    into layout.buildDirectory.dir('dist')
+}
+
+// ---------------------------------------------------------------------------
+// Optional resource pack: `./gradlew :craftrealm-plugin:buildResourcePack`
+// zips resourcepack/ into build/dist/CraftRealm-ResourcePack.zip
+// ---------------------------------------------------------------------------
+tasks.register('buildResourcePack', Zip) {
+    group = 'build'
+    description = 'Packages resourcepack/ into a distributable resource pack zip'
+    archiveFileName = 'CraftRealm-ResourcePack.zip'
+    destinationDirectory = layout.buildDirectory.dir('dist')
+    from rootProject.file('resourcepack')
+}
