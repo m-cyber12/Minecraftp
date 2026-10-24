@@ -29,6 +29,7 @@ public final class MailboxGui extends Gui {
 
     public MailboxGui(EconomyContext context, Player player) {
         super(player, context.theme, 6, context.messages.get("auction.mailbox.title"));
+        this.context = context;
     }
 
     @Override
