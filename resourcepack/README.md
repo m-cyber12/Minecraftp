@@ -51,8 +51,9 @@ the pack's `minecraft:item/<material>.json` override files are keyed by that num
 ```
 
 Currency items use a separate range so they never collide with menu skins:
-`offset + 500` for the Crown coin and `offset + 501` for the banknote
-(`CurrencyItems.java`).
+`offset + 500` for the Crown coin (a `gold_nugget`) and `offset + 501` for the
+banknote (a `paper`), as set in `CurrencyItems.java`. Those two vanilla models
+therefore carry the extra overrides alongside `paper`'s quests icon at 10013.
 
 Turning `theme.custom-model-data.enabled` off in `config.yml` makes the plugin
 stop sending the predicate entirely; the pack can stay installed, the items just
