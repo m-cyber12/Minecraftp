@@ -73,19 +73,24 @@ public final class EventServiceImpl implements EventService {
         active.add(key);
         startedAt.put(key, System.currentTimeMillis());
 
-        switch (key) {
-            case GOLD_RUSH -> announce("events.gold-rush.start");
-            case BLOOD_MOON -> {
-                for (World world : Bukkit.getWorlds()) {
-                    world.setTime(18_000);
+        // trigger() can be reached from the API or the console on any thread, so the
+        // world/chat side effects hop to the tick thread (sync() runs inline when the
+        // caller already is on it).
+        Scheduler.sync(() -> {
+            switch (key) {
+                case GOLD_RUSH -> announce("events.gold-rush.start");
+                case BLOOD_MOON -> {
+                    for (World world : Bukkit.getWorlds()) {
+                        world.setTime(18_000);
+                    }
+                    announce("events.blood-moon.start");
                 }
-                announce("events.blood-moon.start");
+                case MARKET_CRASH -> announce("events.market-crash.start");
+                case CARAVAN -> announce("events.caravan.start");
+                default -> {
+                }
             }
-            case MARKET_CRASH -> announce("events.market-crash.start");
-            case CARAVAN -> announce("events.caravan.start");
-            default -> {
-            }
-        }
+        });
         long started = System.currentTimeMillis();
         long durationMillis = Math.max(1, settings.durationMinutes()) * 60_000L;
         // A self-cancelling stop: if the event was stopped or replaced meanwhile the

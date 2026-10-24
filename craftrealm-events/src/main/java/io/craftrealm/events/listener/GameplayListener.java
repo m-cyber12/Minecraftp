@@ -2,6 +2,7 @@ package io.craftrealm.events.listener;
 
 import io.craftrealm.api.model.Treasure;
 import io.craftrealm.api.service.QuestService;
+import io.craftrealm.core.util.Scheduler;
 import io.craftrealm.events.treasure.TreasureService;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -93,7 +94,8 @@ public final class GameplayListener implements Listener {
             if (paid <= 0) {
                 return;
             }
-            player.getWorld().strikeLightningEffect(block.getLocation());
+            // The claim runs off the main thread; the world API must not.
+            Scheduler.sync(() -> player.getWorld().strikeLightningEffect(block.getLocation()));
         });
     }
 

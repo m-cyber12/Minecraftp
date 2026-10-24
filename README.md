@@ -514,8 +514,8 @@ map, the startup order and the reasoning behind the design, and
 
 The domain logic — money rounding and parsing, price elasticity and drift,
 interest maths, loan schedules, auction fees, job level curves, claim decay,
-message formatting and pagination — is pure Java with no Bukkit imports, so the
-tests run without a server:
+message formatting, pagination and SQL generation for both dialects — is pure Java
+with no Bukkit imports, so the tests run without a server:
 
 ```bash
 ./gradlew test
