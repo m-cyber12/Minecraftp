@@ -51,7 +51,13 @@ jobs:
           exit "$result"
 
       - name: Run unit tests
-        run: ./gradlew test --stacktrace --console=plain
+        shell: bash
+        run: |
+          set +e
+          ./gradlew test --stacktrace --console=plain 2>&1 | tee tests.log
+          result=${PIPESTATUS[0]}
+          python3 .github/scripts/report_tests.py
+          exit "$result"
 
       - name: Build plugin jar and resource pack
         run: >-
