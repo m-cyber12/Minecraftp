@@ -9,6 +9,12 @@ plugins {
 }
 
 dependencies {
+    // Vault is an optional server-provided plugin, but its API is needed to compile
+    // the concrete Economy service registration in this module.
+    compileOnly('com.github.MilkBowl:VaultAPI:1.7') {
+        exclude group: 'org.bukkit', module: 'bukkit'
+    }
+
     implementation project(':craftrealm-api')
     implementation project(':craftrealm-core')
     implementation project(':craftrealm-economy')
