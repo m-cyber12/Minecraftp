@@ -110,7 +110,7 @@ public final class ListingGui extends Gui {
     }
 
     /** Shown by the auction browser. */
-    static List<String> hint(EconomyContext context) {
+    static List<net.kyori.adventure.text.Component> hint(EconomyContext context) {
         return context.messages.bundle().lines("auction.listing.hint");
     }
 }

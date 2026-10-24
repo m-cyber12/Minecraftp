@@ -1,6 +1,7 @@
 package io.craftrealm.economy.gui;
 
 import io.craftrealm.api.model.TransactionType;
+import io.craftrealm.core.text.MessageBundle;
 import io.craftrealm.core.ui.Gui;
 import io.craftrealm.core.ui.GuiTheme;
 import io.craftrealm.core.ui.ItemBuilder;
@@ -10,6 +11,7 @@ import io.craftrealm.economy.EconomyContext;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import net.kyori.adventure.text.Component;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -81,20 +83,20 @@ public final class SellGui extends Gui {
         double total = value(counts);
         int items = counts.values().stream().mapToInt(Integer::intValue).sum();
 
-        List<String> lore = new ArrayList<>(context.messages.bundle().lines("sell.info.lore",
+        List<Component> lore = new ArrayList<>(context.messages.bundle().lines("sell.info.lore",
                 "items", String.valueOf(items), "total", context.money(total)));
         if (!counts.isEmpty()) {
-            lore.add("");
+            lore.add(Component.empty());
             int shown = 0;
             for (Map.Entry<Material, Integer> entry : counts.entrySet()) {
                 if (shown++ >= 6) {
-                    lore.add(context.messages.raw("sell.info.more", "count", String.valueOf(counts.size() - 6)));
+                    lore.add(MessageBundle.parse(context.messages.raw("sell.info.more", "count", String.valueOf(counts.size() - 6))));
                     break;
                 }
-                lore.add(context.messages.raw("sell.info.line",
+                lore.add(MessageBundle.parse(context.messages.raw("sell.info.line",
                         "item", ShopGui.pretty(entry.getKey()),
                         "quantity", String.valueOf(entry.getValue()),
-                        "value", context.money(context.market.cachedPrice(entry.getKey()) * entry.getValue())));
+                        "value", context.money(context.market.cachedPrice(entry.getKey()) * entry.getValue()))));
             }
         }
         set(INFO_SLOT, ItemBuilder.of(Material.GOLD_INGOT)

@@ -3,11 +3,13 @@ package io.craftrealm.economy.gui;
 import io.craftrealm.api.model.JobProgress;
 import io.craftrealm.api.model.JobType;
 import io.craftrealm.core.jobs.JobLevelCurve;
+import io.craftrealm.core.text.MessageBundle;
 import io.craftrealm.core.ui.Gui;
 import io.craftrealm.core.ui.ItemBuilder;
 import io.craftrealm.economy.EconomyContext;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import net.kyori.adventure.text.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,15 +45,15 @@ public final class JobGui extends Gui {
             double multiplier = context.jobs.multiplier(progress.level());
             double earned = context.jobs.earnedToday(viewer.getUniqueId(), job);
 
-            List<String> lore = new ArrayList<>(context.messages.bundle().lines("jobs.entry.lore",
+            List<Component> lore = new ArrayList<>(context.messages.bundle().lines("jobs.entry.lore",
                     "level", String.valueOf(progress.level()),
                     "xp", String.valueOf(progress.xp()),
                     "needed", String.valueOf(remaining),
                     "multiplier", String.format(java.util.Locale.ROOT, "%.2f", multiplier),
                     "earned", context.money(earned),
                     "cap", context.money(context.settings.jobs().dailyCap())));
-            lore.add(0, context.messages.raw("jobs.entry.unit", "unit", job.unit()));
-            lore.add(1, bar(progress.xp(), needed));
+            lore.add(0, MessageBundle.parse(context.messages.raw("jobs.entry.unit", "unit", job.unit())));
+            lore.add(1, MessageBundle.parse(bar(progress.xp(), needed)));
 
             set(SLOTS[index], ItemBuilder.of(jobMaterial(job))
                     .name(context.messages.raw("jobs." + job.key() + ".name"))

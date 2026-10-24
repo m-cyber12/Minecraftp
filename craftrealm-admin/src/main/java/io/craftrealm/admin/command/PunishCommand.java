@@ -84,6 +84,7 @@ public final class PunishCommand extends BaseCommand {
         }
         String reason = String.join(" ", java.util.Arrays.copyOfRange(args, reasonStart, args.length));
         java.util.UUID staff = sender instanceof Player player ? player.getUniqueId() : null;
+        long punishmentDuration = duration;
 
         if (type == PunishmentType.WARN) {
             services.punishments.warn(staff, target, reason).thenAccept(escalated ->
@@ -97,11 +98,11 @@ public final class PunishCommand extends BaseCommand {
             messages.send(sender, "admin.player.froze", "player", targetName);
             return;
         }
-        services.punishments.punish(staff, target, type, reason, duration).thenAccept(punishment ->
+        services.punishments.punish(staff, target, type, reason, punishmentDuration).thenAccept(punishment ->
                 Scheduler.sync(() -> messages.send(sender, "punish.applied",
                         "player", targetName,
                         "type", type.name(),
-                        "duration", duration <= 0 ? "permanent" : TimeUtil.formatDuration(duration))));
+                        "duration", punishmentDuration <= 0 ? "permanent" : TimeUtil.formatDuration(punishmentDuration))));
     }
 
     @Override

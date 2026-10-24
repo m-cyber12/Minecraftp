@@ -27,6 +27,7 @@ public final class BountyGui extends Gui {
 
     public BountyGui(EconomyContext context, Player player) {
         super(player, context.theme, 6, context.messages.get("bounty.title"));
+        this.context = context;
     }
 
     @Override
