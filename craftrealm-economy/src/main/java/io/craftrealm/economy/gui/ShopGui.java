@@ -200,7 +200,7 @@ public final class ShopGui extends Gui {
     }
 
     /** Exposed so the sell menu can reuse the same quote formatting. */
-    static List<String> quoteLore(EconomyContext context, MarketQuote quote) {
+    static List<net.kyori.adventure.text.Component> quoteLore(EconomyContext context, MarketQuote quote) {
         return context.messages.bundle().lines("shop.quote.lore",
                 "base", context.money(quote.basePrice()),
                 "price", context.money(quote.price()));

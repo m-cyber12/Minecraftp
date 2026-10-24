@@ -2,6 +2,7 @@ package io.craftrealm.economy.gui;
 
 import io.craftrealm.api.model.Bounty;
 import io.craftrealm.core.ui.Gui;
+import io.craftrealm.core.ui.GuiTheme;
 import io.craftrealm.core.ui.ItemBuilder;
 import io.craftrealm.core.util.Scheduler;
 import io.craftrealm.core.util.TimeUtil;

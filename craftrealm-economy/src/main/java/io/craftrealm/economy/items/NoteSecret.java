@@ -33,7 +33,7 @@ public final class NoteSecret {
     public static NoteSecret load(File file) {
         try {
             if (file.isFile()) {
-                byte[] decoded = Base64.getDecoder().decode(Files.readString(file).trim());
+                byte[] decoded = Base64.getDecoder().decode(Files.readString(file.toPath()).trim());
                 if (decoded.length >= 16) {
                     return new NoteSecret(decoded);
                 }
@@ -43,7 +43,7 @@ public final class NoteSecret {
             if (file.getParentFile() != null) {
                 file.getParentFile().mkdirs();
             }
-            Files.writeString(file, Base64.getEncoder().encodeToString(generated));
+            Files.writeString(file.toPath(), Base64.getEncoder().encodeToString(generated));
             return new NoteSecret(generated);
         } catch (IOException | IllegalArgumentException exception) {
             CraftRealmCore.logger().warning("Could not read the note signing key, using an ephemeral one: "

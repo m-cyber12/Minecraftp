@@ -14,9 +14,9 @@ import io.craftrealm.economy.EconomyContext;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.text.Component;
 
 /**
  * The bank vault.
@@ -104,8 +104,8 @@ public final class BankGui extends Gui {
         Loan active = loans.stream().filter(loan -> loan.status() == LoanStatus.ACTIVE)
                 .findFirst().orElse(null);
         if (active == null) {
-            List<String> lore = new ArrayList<>(context.messages.bundle().lines("bank.loan.none",
-                    "limit", context.money(loanLimit)));
+            List<Component> lore = context.messages.bundle().lines("bank.loan.none",
+                    "limit", context.money(loanLimit));
             set(31, ItemBuilder.of(Material.WRITABLE_BOOK)
                     .name(context.messages.raw("bank.loan.name"))
                     .lore(lore)

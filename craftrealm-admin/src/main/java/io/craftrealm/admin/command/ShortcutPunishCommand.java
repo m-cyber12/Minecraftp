@@ -86,6 +86,7 @@ public final class ShortcutPunishCommand extends BaseCommand {
         }
         String reason = String.join(" ", java.util.Arrays.copyOfRange(args, reasonStart, args.length));
         UUID staff = sender instanceof Player player ? player.getUniqueId() : null;
+        long punishmentDuration = duration;
 
         if (type == PunishmentType.WARN) {
             services.punishments.warn(staff, target, reason).thenAccept(escalated ->
@@ -94,11 +95,11 @@ public final class ShortcutPunishCommand extends BaseCommand {
                             "action", escalated == null ? "none" : escalated.name())));
             return;
         }
-        services.punishments.punish(staff, target, type, reason, duration).thenAccept(punishment ->
+        services.punishments.punish(staff, target, type, reason, punishmentDuration).thenAccept(punishment ->
                 Scheduler.sync(() -> messages.send(sender, "punish.applied",
                         "player", targetName,
                         "type", type.name(),
-                        "duration", duration <= 0 ? "permanent" : TimeUtil.formatDuration(duration))));
+                        "duration", punishmentDuration <= 0 ? "permanent" : TimeUtil.formatDuration(punishmentDuration))));
     }
 
     @Override

@@ -12,8 +12,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.List;
+import net.kyori.adventure.text.Component;
 
 /**
  * Auction browser.
@@ -69,12 +69,12 @@ public final class AuctionGui extends Gui {
                     ? io.craftrealm.core.util.Money.round(listing.topBid() * (1.0 + increment))
                     : listing.startingBid();
 
-            List<String> lore = new ArrayList<>(context.messages.bundle().lines("auction.listing.lore",
+            List<Component> lore = context.messages.bundle().lines("auction.listing.lore",
                     "seller", listing.sellerName() == null ? "?" : listing.sellerName(),
                     "bid", context.money(listing.currentPrice()),
                     "minimum", context.money(minimum),
                     "buy", listing.buyNow() > 0 ? context.money(listing.buyNow()) : "-",
-                    "time", TimeUtil.formatDuration(listing.remainingMillis())));
+                    "time", TimeUtil.formatDuration(listing.remainingMillis()));
             set(index, ItemBuilder.of(icon)
                     .name(context.messages.raw("auction.listing.name",
                             "item", ShopGui.pretty(icon.getType())))
