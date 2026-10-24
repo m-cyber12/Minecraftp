@@ -50,6 +50,17 @@ public enum Dialect {
                 .append("?,".repeat(columns.length));
         sql.setLength(sql.length() - 1);
         sql.append(')');
+        boolean updatable = false;
+        for (String column : columns) {
+            if (!contains(keyColumns, column)) {
+                updatable = true;
+                break;
+            }
+        }
+        if (!updatable) {
+            // Nothing but key columns: a plain INSERT is the correct upsert.
+            return sql.toString();
+        }
         if (this == SQLITE) {
             sql.append(" ON CONFLICT (").append(String.join(", ", keyColumns)).append(") DO UPDATE SET ");
             for (String column : columns) {
