@@ -1,8 +1,7 @@
 name: Build
 
-# Compiles, tests and packages CraftRealm on every push and pull request.
-# The shaded plugin jar and the resource-pack zip are attached to the run so a
-# release candidate can be downloaded without a local JDK.
+# Use GitHub's Java 21 runner as the compiler, test runner and packager.
+# Every push, pull request and manual dispatch gets the same reproducible build.
 
 on:
   push:
@@ -21,7 +20,7 @@ jobs:
   build:
     name: Java 21 / Gradle
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Check out
@@ -32,23 +31,23 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
-      # Caches ~/.gradle and the wrapper distribution between runs.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Make the wrapper executable
         run: chmod +x gradlew
 
-      # Kept separate from `test` so a compile error is reported in seconds and
-      # shows up as its own failing step.
-      - name: Compile
+      # This step is the compiler gate. Gradle's full javac diagnostics are
+      # retained directly in the GitHub Actions log if compilation fails.
+      - name: Compile production and test sources
         run: ./gradlew compileJava compileTestJava --stacktrace --console=plain
 
-      - name: Unit tests
+      - name: Run unit tests
         run: ./gradlew test --stacktrace --console=plain
 
-      - name: Package
+      - name: Build plugin jar and resource pack
         run: >-
           ./gradlew :craftrealm-plugin:shadowJar
           :craftrealm-plugin:buildResourcePack
