@@ -430,7 +430,7 @@ dependencies {
 
 ```java
 import io.craftrealm.api.CraftRealm;
-import io.craftrealm.api.model.EconomyResult;
+import io.craftrealm.api.model.TransactionType;
 
 CraftRealm.get().economy()
         .deposit(uuid, 250.0, TransactionType.QUEST_REWARD, "Welcome bonus")
@@ -448,7 +448,9 @@ also lives in Bukkit's `ServicesManager` for preference-free lookup.
 ### Listening for money moving
 
 ```java
+import io.craftrealm.api.CraftRealm;
 import io.craftrealm.api.event.BalanceChangeEvent;
+import io.craftrealm.api.model.TransactionType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -502,7 +504,9 @@ resourcepack/        optional resource pack (generated 16x16 art + models)
 ```
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the package-by-package
-map, the startup order and the reasoning behind the design.
+map, the startup order and the reasoning behind the design, and
+[`resourcepack/README.md`](resourcepack/README.md) for the optional art pack
+(regeneration, model-data indices, `pack_format` per version).
 
 ---
 
