@@ -237,7 +237,7 @@ auction:
   cancelled: "<#f26b21>Listing cancelled; the item is in your mailbox.</#f26b21>"
   mailbox:
     title: "<#6b4a2f>Mailbox"
-    name: "<white>{item}</white>"
+    name: "<#6b4a2f>Mailbox</#6b4a2f>"
     info: "<#6b4a2f>Collect what the auction house owes you.</#6b4a2f>"
     item:
       name: "<white>{item}</white>"

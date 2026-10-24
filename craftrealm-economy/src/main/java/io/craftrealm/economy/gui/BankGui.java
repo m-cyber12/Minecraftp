@@ -113,7 +113,9 @@ public final class BankGui extends Gui {
             return;
         }
         set(31, ItemBuilder.of(Material.WRITTEN_BOOK)
-                .name(context.messages.raw("bank.loan.active"))
+                .name(context.messages.raw("bank.loan.active",
+                        "amount", context.money(active.outstanding()),
+                        "due", TimeUtil.formatDate(active.dueAt())))
                 .lore(context.messages.bundle().lines("bank.loan.active-lore",
                         "outstanding", context.money(active.outstanding()),
                         "principal", context.money(active.principal()),

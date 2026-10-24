@@ -25,6 +25,7 @@ import io.craftrealm.events.EventModule;
 import io.craftrealm.web.WebPanel;
 import io.craftrealm.web.WebPanelSettings;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -72,6 +73,8 @@ public final class CraftRealmPlugin extends JavaPlugin {
     private VaultHook vaultHook;
 
     private CommandRouter router;
+    private GuiListener guiListener;
+    private ConnectionListener connectionListener;
     private final List<Integer> tasks = new ArrayList<>();
 
     @Override
@@ -124,14 +127,20 @@ public final class CraftRealmPlugin extends JavaPlugin {
         }
         if (api != null) {
             io.craftrealm.api.CraftRealm.unregister(api);
+            getServer().getServicesManager().unregister(CraftRealmAPI.class, api);
+            api = null;
         }
+        removeListeners();
+
+        // Flush the price table before the pool closes. This is the one place a
+        // short blocking wait is correct: the server is already shutting down and
+        // losing the last few minutes of market pressure would be worse than 5s.
         if (marketService != null) {
-            // Persist the current prices so a restart does not reset the market.
-            marketService.allQuotes().thenAccept(quotes -> {
-                if (database != null) {
-                    marketService.tickRecovery().join();
-                }
-            });
+            try {
+                marketService.flush().get(5, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception exception) {
+                getLogger().warning("Could not flush market prices: " + exception.getMessage());
+            }
         }
         if (database != null) {
             database.close();
@@ -226,11 +235,37 @@ public final class CraftRealmPlugin extends JavaPlugin {
     }
 
     private void registerListeners() {
-        getServer().getPluginManager().registerEvents(new GuiListener(), this);
-        getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
+        guiListener = new GuiListener();
+        connectionListener = new ConnectionListener(this);
+        getServer().getPluginManager().registerEvents(guiListener, this);
+        getServer().getPluginManager().registerEvents(connectionListener, this);
         economyModule.registerListeners(getServer().getPluginManager());
         adminModule.registerListeners(getServer().getPluginManager());
         eventModule.registerListeners(getServer().getPluginManager());
+    }
+
+    /**
+     * Removes every listener this plugin registered, so a reload can rebuild the
+     * modules without leaving a second copy of each handler attached to the bus.
+     */
+    private void removeListeners() {
+        if (guiListener != null) {
+            HandlerList.unregisterAll(guiListener);
+            guiListener = null;
+        }
+        if (connectionListener != null) {
+            HandlerList.unregisterAll(connectionListener);
+            connectionListener = null;
+        }
+        if (economyModule != null) {
+            economyModule.unregisterListeners();
+        }
+        if (adminModule != null) {
+            adminModule.unregisterListeners();
+        }
+        if (eventModule != null) {
+            eventModule.unregisterListeners();
+        }
     }
 
     private void scheduleTasks() {
@@ -311,12 +346,81 @@ public final class CraftRealmPlugin extends JavaPlugin {
 
     // ------------------------------------------------------------------ reload
 
-    /** Re-reads config.yml and language files; used by {@code /craftrealm reload}. */
-    public void reloadEverything() {
+    /**
+     * Re-reads {@code config.yml} and the language files and rebuilds everything
+     * that captured the previous snapshot.
+     *
+     * <p>Must be called on the main thread: listeners, commands and the web panel
+     * all touch Bukkit. The database connection is deliberately kept (its pool,
+     * WAL state and prepared statements survive a config change) — swapping the
+     * storage backend still needs a restart and is reported as such.</p>
+     */
+    public synchronized void reloadEverything() {
+        if (!isEnabled()) {
+            return;
+        }
         reloadConfig();
-        settings = ConfigLoader.load(getConfig());
-        messages.update(loadMessages().bundle(), settings.messages().prefix());
+        Settings next = ConfigLoader.load(getConfig());
+        if (!next.storage().equals(settings.storage())) {
+            getLogger().warning("storage.* changed in config.yml — the current connection is kept; "
+                    + "restart the server to switch backends.");
+        }
+
+        // Stop everything that holds the old snapshot...
+        tasks.forEach(Scheduler::cancel);
+        tasks.clear();
+        if (webPanel != null) {
+            webPanel.stop();
+            webPanel = null;
+        }
+        if (webBridge != null) {
+            webBridge.close();
+            webBridge = null;
+        }
+        if (vaultHook != null) {
+            vaultHook.unregister();
+            vaultHook = null;
+        }
+        if (api != null) {
+            io.craftrealm.api.CraftRealm.unregister(api);
+            getServer().getServicesManager().unregister(CraftRealmAPI.class, api);
+            api = null;
+        }
+        removeListeners();
+
+        // ...then build the new one from the fresh settings.
+        this.settings = next;
+        this.messages = loadMessages();
+        this.theme = new GuiTheme(next.theme());
+
+        buildServices();
+        buildModules();
+        registerCommands();
+        registerListeners();
+        scheduleTasks();
+        startWebPanel();
+        registerVault();
+        registerApi();
+        primeOnlinePlayers();
+
         getServer().getPluginManager().callEvent(new io.craftrealm.api.event.CraftRealmReloadEvent());
+    }
+
+    /**
+     * Re-primes the per-player caches after a reload. Without this, balances read
+     * from the new (empty) cache would look like zero until each player rejoined.
+     */
+    private void primeOnlinePlayers() {
+        for (org.bukkit.entity.Player player : getServer().getOnlinePlayers()) {
+            java.util.UUID uuid = player.getUniqueId();
+            economyService.loadAccount(uuid, player.getName());
+            jobService.load(uuid);
+            // Punishment caches decide whether a player may talk or move, so they
+            // must be primed again or a muted player could speak until they rejoin.
+            adminModule.punishments().load(uuid);
+            eventModule.cosmetics().load(uuid);
+            eventModule.quests().ensure(uuid);
+        }
     }
 
     // ------------------------------------------------------------------ access

@@ -193,8 +193,10 @@ plugins/CraftRealm/
 5. **Warm up the market** — the anchor prices under `market.base-prices` are what
    everything else drifts back to. Adjust them to your server's scale before
    players start trading.
-6. `/craftrealm reload` applies config and language edits; storage changes need a
-   restart.
+6. `/craftrealm reload` re-reads `config.yml` and the language files and rebuilds
+   the services behind them (listeners, tasks and the web panel are restarted, so
+   edits take effect without a server restart). Changing `storage.*` needs a real
+   restart — the plugin says so in the console instead of silently ignoring it.
 
 ---
 

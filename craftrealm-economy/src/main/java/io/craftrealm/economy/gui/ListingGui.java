@@ -45,15 +45,18 @@ public final class ListingGui extends Gui {
                 .build());
 
         set(10, ItemBuilder.of(Material.RED_DYE)
-                .name(context.messages.raw("auction.listing.lower"))
+                .name(context.messages.raw("auction.listing.lower",
+                        "amount", context.money(Math.max(1.0, startingPrice * 0.9))))
                 .build(), click -> adjust(0.9));
 
         set(16, ItemBuilder.of(Material.LIME_DYE)
-                .name(context.messages.raw("auction.listing.raise"))
+                .name(context.messages.raw("auction.listing.raise",
+                        "amount", context.money(startingPrice * 1.1)))
                 .build(), click -> adjust(1.1));
 
         set(22, ItemBuilder.of(Material.GOLD_INGOT)
-                .name(context.messages.raw("auction.listing.confirm"))
+                .name(context.messages.raw("auction.listing.confirm",
+                        "amount", context.money(startingPrice)))
                 .lore(context.messages.bundle().lines("auction.listing.confirm-lore",
                         "fee", context.money(context.auctions.listingFee(startingPrice))))
                 .build(), click -> confirm());

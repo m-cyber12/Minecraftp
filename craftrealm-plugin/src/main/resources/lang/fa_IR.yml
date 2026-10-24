@@ -233,7 +233,7 @@ auction:
   cancelled: "<#f26b21>آگهی لغو شد؛ آیتم در صندوق پستی است.</#f26b21>"
   mailbox:
     title: "<#6b4a2f>صندوق پستی"
-    name: "<white>{item}</white>"
+    name: "<#6b4a2f>صندوق پستی</#6b4a2f>"
     info: "<#6b4a2f>آنچه خانهٔ حراج به شما بدهکار است را بگیرید.</#6b4a2f>"
     item:
       name: "<white>{item}</white>"

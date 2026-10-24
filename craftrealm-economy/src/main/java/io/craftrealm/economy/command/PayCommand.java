@@ -88,7 +88,8 @@ public final class PayCommand extends BaseCommand {
             Player receiver = Bukkit.getPlayer(target);
             if (receiver != null) {
                 messages.send(receiver, "economy.pay.received", "amount", context.money(amount),
-                        "player", player.getName());
+                        "player", player.getName(),
+                        "balance", context.money(context.economy.cachedBalance(receiver.getUniqueId())));
                 theme().play(receiver, io.craftrealm.core.ui.GuiTheme.Click.PURCHASE);
             }
             theme().play(player, io.craftrealm.core.ui.GuiTheme.Click.SUCCESS);

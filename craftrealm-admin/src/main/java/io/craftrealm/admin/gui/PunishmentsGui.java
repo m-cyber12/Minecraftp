@@ -61,6 +61,7 @@ public final class PunishmentsGui extends Gui {
             Report report = shown.get(index);
             set(index, ItemBuilder.of(Material.PAPER)
                     .name(messages.raw("admin.punishments.report.name",
+                            "id", String.valueOf(report.id()),
                             "reporter", report.reporterName(),
                             "target", report.targetName()))
                     .lore(lore(report))

@@ -177,9 +177,9 @@ public final class ShopGui extends Gui {
                     viewer.getWorld().dropItemNaturally(viewer.getLocation(), overflow));
             context.market.recordBuy(material, quantity);
             context.messages.actionBar(viewer, "shop.bought",
-                    "quantity", String.valueOf(quantity),
+                    "amount", String.valueOf(quantity),
                     "item", pretty(material),
-                    "price", context.money(total),
+                    "total", context.money(total),
                     "balance", context.money(result.balanceAfter()));
             theme.play(viewer, GuiTheme.Click.PURCHASE);
             refresh();

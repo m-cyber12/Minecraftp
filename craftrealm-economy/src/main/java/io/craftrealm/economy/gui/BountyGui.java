@@ -43,7 +43,8 @@ public final class BountyGui extends Gui {
             var target = Bukkit.getOfflinePlayer(bounty.target());
             ItemBuilder builder = ItemBuilder.of(Material.PLAYER_HEAD)
                     .name(context.messages.raw("bounty.entry.name",
-                            "player", bounty.targetName() == null ? "?" : bounty.targetName()))
+                            "player", bounty.targetName() == null ? "?" : bounty.targetName(),
+                            "amount", context.money(bounty.amount())))
                     .lore(context.messages.bundle().lines("bounty.entry.lore",
                             "amount", context.money(bounty.amount()),
                             "placed", TimeUtil.relative(bounty.createdAt())));

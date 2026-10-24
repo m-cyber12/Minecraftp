@@ -107,6 +107,11 @@ public final class AdminModule {
         listeners.forEach(listener -> manager.registerEvents(listener, services.context.plugin));
     }
 
+    /** Detaches every listener; used when the plugin reloads its settings. */
+    public void unregisterListeners() {
+        listeners.forEach(org.bukkit.event.HandlerList::unregisterAll);
+    }
+
     public AdminServices services() {
         return services;
     }

@@ -91,6 +91,11 @@ public final class EconomyModule {
         listeners.forEach(listener -> manager.registerEvents(listener, context.plugin));
     }
 
+    /** Detaches every listener; used when the plugin reloads its settings. */
+    public void unregisterListeners() {
+        listeners.forEach(org.bukkit.event.HandlerList::unregisterAll);
+    }
+
     public EconomyContext context() {
         return context;
     }

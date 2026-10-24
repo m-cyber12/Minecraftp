@@ -103,7 +103,7 @@ public final class MailboxGui extends Gui {
                                 viewer.getWorld().dropItemNaturally(viewer.getLocation(), overflow));
                     }
                     context.messages.send(viewer, "auction.mailbox.collected",
-                            "amount", context.money(collected.amount()));
+                            "what", context.money(collected.amount()));
                     theme.play(viewer, GuiTheme.Click.SUCCESS);
                     reload(null);
                 }));

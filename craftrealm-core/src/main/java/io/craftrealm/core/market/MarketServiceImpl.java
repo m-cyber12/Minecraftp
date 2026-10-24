@@ -193,6 +193,20 @@ public final class MarketServiceImpl implements MarketService {
         return CompletableFuture.completedFuture(changed.size());
     }
 
+    /**
+     * Writes the whole hot price table in one transaction.
+     *
+     * <p>Trades already persist individually; this is the shutdown path, where a
+     * recovery tick may have been in flight. Bounded by the caller's timeout.</p>
+     */
+    public CompletableFuture<Void> flush() {
+        List<MarketQuote> snapshot;
+        synchronized (this) {
+            snapshot = new ArrayList<>(quotes.values());
+        }
+        return snapshot.isEmpty() ? CompletableFuture.completedFuture(null) : repository.saveAll(snapshot);
+    }
+
     /** Restricts the tracked catalogue to the configured materials. */
     public void retainOnly(Collection<Material> materials) {
         quotes.keySet().retainAll(materials);

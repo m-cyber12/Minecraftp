@@ -116,6 +116,11 @@ public final class EventModule {
         listeners.forEach(listener -> manager.registerEvents(listener, plugin));
     }
 
+    /** Detaches every listener; used when the plugin reloads its settings. */
+    public void unregisterListeners() {
+        listeners.forEach(org.bukkit.event.HandlerList::unregisterAll);
+    }
+
     /** Starts the recurring work. Everything is async-safe or runs off-tick. */
     public void startTasks() {
         // Claim upkeep once a day (20 min after startup to avoid login storms).
