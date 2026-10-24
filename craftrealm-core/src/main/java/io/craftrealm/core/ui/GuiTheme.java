@@ -2,6 +2,8 @@ package io.craftrealm.core.ui;
 
 import io.craftrealm.core.config.Settings;
 import io.craftrealm.core.text.MessageBundle;
+import io.craftrealm.core.text.Messages;
+import io.craftrealm.core.text.MessageBundle;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -92,10 +94,30 @@ public final class GuiTheme {
 
     private final Settings.ThemeSettings settings;
     private final Map<String, String> palette;
+    /** Optional message bundle, so default buttons follow the server language. */
+    private final Messages labels;
 
     public GuiTheme(Settings.ThemeSettings settings) {
+        this(settings, null);
+    }
+
+    public GuiTheme(Settings.ThemeSettings settings, Messages labels) {
         this.settings = settings;
         this.palette = settings.palette();
+        this.labels = labels;
+    }
+
+    /**
+     * A localised GUI label such as {@code gui.close}.
+     *
+     * <p>Falls back to the supplied MiniMessage when no bundle is attached (unit
+     * tests) or the language file has no such key (a user deleted it).</p>
+     */
+    public Component label(String key, String fallback) {
+        if (labels != null && labels.bundle().has(key)) {
+            return labels.get(key);
+        }
+        return MessageBundle.parse(fallback);
     }
 
     // ------------------------------------------------------------------ colours

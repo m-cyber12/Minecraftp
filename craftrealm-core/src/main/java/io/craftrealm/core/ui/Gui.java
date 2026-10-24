@@ -92,7 +92,7 @@ public abstract class Gui implements InventoryHolder {
     /** Standard back button. */
     protected void backButton(Runnable onBack) {
         set(inventory.getSize() - 9, ItemBuilder.of(GuiTheme.Icon.BACK.material())
-                .name(theme.tag("parchment") + "<bold>Back</bold>")
+                .name(theme.label("gui.back", theme.tag("oak") + "Back"))
                 .build(), click -> {
             theme.play(viewer, GuiTheme.Click.PAGE);
             onBack.run();
@@ -102,7 +102,7 @@ public abstract class Gui implements InventoryHolder {
     /** Standard close button. */
     protected void closeButton() {
         set(inventory.getSize() - 1, ItemBuilder.of(Material.BARRIER)
-                .name("<red><bold>Close</bold>")
+                .name(theme.label("gui.close", theme.tag("redstone") + "Close"))
                 .build(), click -> {
             theme.play(viewer, GuiTheme.Click.CLOSE);
             viewer.closeInventory();

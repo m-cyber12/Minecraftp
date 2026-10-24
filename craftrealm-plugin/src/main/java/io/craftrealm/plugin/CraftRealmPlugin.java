@@ -87,7 +87,7 @@ public final class CraftRealmPlugin extends JavaPlugin {
 
         this.settings = ConfigLoader.load(getConfig());
         this.messages = loadMessages();
-        this.theme = new GuiTheme(settings.theme());
+        this.theme = new GuiTheme(settings.theme(), messages);
 
         try {
             this.database = openDatabase();
@@ -391,7 +391,7 @@ public final class CraftRealmPlugin extends JavaPlugin {
         // ...then build the new one from the fresh settings.
         this.settings = next;
         this.messages = loadMessages();
-        this.theme = new GuiTheme(next.theme());
+        this.theme = new GuiTheme(next.theme(), messages);
 
         buildServices();
         buildModules();
