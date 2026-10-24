@@ -209,7 +209,8 @@ public final class WebPanel {
 
     private static int limit(Context ctx) {
         try {
-            return Math.max(1, Math.min(500, Integer.parseInt(ctx.queryParam("limit", "50"))));
+            String rawLimit = ctx.queryParam("limit");
+            return Math.max(1, Math.min(500, Integer.parseInt(rawLimit == null ? "50" : rawLimit)));
         } catch (NumberFormatException exception) {
             return 50;
         }
