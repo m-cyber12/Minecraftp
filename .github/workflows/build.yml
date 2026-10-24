@@ -39,10 +39,16 @@ jobs:
       - name: Make the wrapper executable
         run: chmod +x gradlew
 
-      # This step is the compiler gate. Gradle's full javac diagnostics are
-      # retained directly in the GitHub Actions log if compilation fails.
+      # This step is the compiler gate. It mirrors javac errors into GitHub
+      # check annotations as well as retaining the full Gradle log in the run.
       - name: Compile production and test sources
-        run: ./gradlew compileJava compileTestJava --stacktrace --console=plain
+        shell: bash
+        run: |
+          set +e
+          ./gradlew compileJava compileTestJava --stacktrace --console=plain 2>&1 | tee compile.log
+          result=${PIPESTATUS[0]}
+          python3 .github/scripts/report_compile.py compile.log
+          exit "$result"
 
       - name: Run unit tests
         run: ./gradlew test --stacktrace --console=plain
