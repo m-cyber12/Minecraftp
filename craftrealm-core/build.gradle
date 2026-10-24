@@ -15,4 +15,8 @@ dependencies {
 
     // Logging facade is provided by the server.
     compileOnly 'org.slf4j:slf4j-api:2.0.13'
+
+    // Pure-Java text tests execute MiniMessage directly; Paper is compileOnly, so
+    // its Adventure runtime is not otherwise present on the test runtime classpath.
+    testImplementation "net.kyori:adventure-text-minimessage:${adventureVersion}"
 }
