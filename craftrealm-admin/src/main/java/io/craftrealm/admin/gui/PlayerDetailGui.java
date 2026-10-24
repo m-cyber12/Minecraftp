@@ -9,6 +9,7 @@ import io.craftrealm.core.ui.GuiTheme;
 import io.craftrealm.core.ui.ItemBuilder;
 import io.craftrealm.core.util.Scheduler;
 import io.craftrealm.core.util.TimeUtil;
+import io.craftrealm.core.text.Messages;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -29,6 +30,7 @@ public final class PlayerDetailGui extends Gui {
     private final AdminServices services;
     private final UUID target;
     private final String targetName;
+    private final Messages messages;
     private PlayerView view;
     private long warningCount;
     private int ipCount;
@@ -39,6 +41,7 @@ public final class PlayerDetailGui extends Gui {
         this.services = services;
         this.target = target;
         this.targetName = targetName;
+        this.messages = services.context.messages;
     }
 
     @Override

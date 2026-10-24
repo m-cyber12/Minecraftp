@@ -131,12 +131,12 @@ public final class CosmeticServiceImpl implements CosmeticService {
 
     @Override
     public CompletableFuture<Boolean> unequip(UUID uuid, CosmeticType type) {
-        return repository.unequipFamily(uuid, familyPrefix(type)).thenApply(done -> {
+        return repository.unequipFamily(uuid, familyPrefix(type)).thenApply(ignored -> {
             Map<CosmeticType, String> map = equipped.get(uuid);
             if (map != null) {
                 map.remove(type);
             }
-            return done;
+            return true;
         });
     }
 

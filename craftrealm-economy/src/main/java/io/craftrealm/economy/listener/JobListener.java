@@ -2,7 +2,7 @@ package io.craftrealm.economy.listener;
 
 import io.craftrealm.api.model.JobType;
 import io.craftrealm.api.service.JobService;
-import io.craftrealm.core.config.Settings;
+import io.craftrealm.core.config.JobSettings;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -36,10 +36,10 @@ public final class JobListener implements Listener {
     private static final int PLACED_MAX = 20_000;
 
     private final JobService jobs;
-    private final Settings.JobSettings settings;
+    private final JobSettings settings;
     private final Map<String, Long> placed = new ConcurrentHashMap<>();
 
-    public JobListener(JobService jobs, Settings.JobSettings settings) {
+    public JobListener(JobService jobs, JobSettings settings) {
         this.jobs = jobs;
         this.settings = settings;
     }

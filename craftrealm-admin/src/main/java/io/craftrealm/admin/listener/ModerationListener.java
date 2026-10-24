@@ -73,9 +73,10 @@ public final class ModerationListener implements Listener {
         punishments.load(player.getUniqueId());
         staffTools.applyOnJoin(player);
         players.touch(player.getUniqueId(), player.getName());
-        String address = player.getAddress() == null ? null : player.getAddress().getHostAddress();
-        if (address != null) {
-            players.recordIp(player.getUniqueId(), address);
+        java.net.InetSocketAddress socketAddress = player.getAddress();
+        java.net.InetAddress inetAddress = socketAddress == null ? null : socketAddress.getAddress();
+        if (inetAddress != null) {
+            players.recordIp(player.getUniqueId(), inetAddress.getHostAddress());
         }
         io.craftrealm.core.CraftRealmCore.rememberName(player.getUniqueId(), player.getName());
         if (punishments.isMuted(player.getUniqueId())) {
