@@ -3,7 +3,6 @@ package io.craftrealm.core.ui;
 import io.craftrealm.core.config.Settings;
 import io.craftrealm.core.text.MessageBundle;
 import io.craftrealm.core.text.Messages;
-import io.craftrealm.core.text.MessageBundle;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -141,7 +140,7 @@ public final class GuiTheme {
     public ItemStack icon(Icon icon, String name, List<String> lore) {
         ItemBuilder builder = ItemBuilder.of(icon.material()).name(name);
         if (lore != null && !lore.isEmpty()) {
-            builder.lore(lore);
+            builder.lore(lore.stream().map(MessageBundle::parse).toList());
         }
         if (settings.customModelData()) {
             builder.customModelData(settings.customModelDataOffset() + icon.ordinal());

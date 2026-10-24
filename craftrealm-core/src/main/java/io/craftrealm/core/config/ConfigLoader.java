@@ -375,13 +375,13 @@ public final class ConfigLoader {
     private static Settings.QuestSettings quests(FileConfiguration config) {
         List<Settings.QuestTemplate> templates = new ArrayList<>();
         for (Map<?, ?> raw : config.getMapList("quests.templates")) {
-            String id = String.valueOf(raw.getOrDefault("id", ""));
-            String kind = String.valueOf(raw.getOrDefault("kind", "MINE_BLOCK"));
-            String scope = String.valueOf(raw.getOrDefault("scope", "DAILY")).toUpperCase(Locale.ROOT);
+            String id = String.valueOf(value(raw, "id", ""));
+            String kind = String.valueOf(value(raw, "kind", "MINE_BLOCK"));
+            String scope = String.valueOf(value(raw, "scope", "DAILY")).toUpperCase(Locale.ROOT);
             String rawMaterial = raw.get("material") == null ? null : String.valueOf(raw.get("material"));
             double target = number(raw.get("target"), 64);
             double reward = number(raw.get("reward"), 100);
-            String currency = String.valueOf(raw.getOrDefault("currency", "CROWNS"));
+            String currency = String.valueOf(value(raw, "currency", "CROWNS"));
             if (id.isBlank()) {
                 continue;
             }
@@ -404,7 +404,7 @@ public final class ConfigLoader {
                     (int) number(raw.get("rank"), 1),
                     (int) number(raw.get("shards"), 10),
                     number(raw.get("crowns"), 0),
-                    String.valueOf(raw.getOrDefault("title", ""))));
+                    String.valueOf(value(raw, "title", ""))));
         }
         return new Settings.SeasonSettings(
                 config.getBoolean("seasons.enabled", true),
@@ -417,16 +417,16 @@ public final class ConfigLoader {
     private static Settings.CosmeticSettings cosmetics(FileConfiguration config) {
         List<Cosmetic> catalogue = new ArrayList<>();
         for (Map<?, ?> raw : config.getMapList("cosmetics.catalogue")) {
-            String id = String.valueOf(raw.getOrDefault("id", ""));
-            String type = String.valueOf(raw.getOrDefault("type", "PREFIX")).toUpperCase(Locale.ROOT);
-            String value = String.valueOf(raw.getOrDefault("value", ""));
+            String id = String.valueOf(value(raw, "id", ""));
+            String type = String.valueOf(value(raw, "type", "PREFIX")).toUpperCase(Locale.ROOT);
+            String value = String.valueOf(value(raw, "value", ""));
             if (id.isBlank()) {
                 continue;
             }
             try {
                 catalogue.add(new Cosmetic(id, CosmeticType.valueOf(type), value,
                         (int) number(raw.get("cost"), 10),
-                        String.valueOf(raw.getOrDefault("name", id))));
+                        String.valueOf(value(raw, "name", id))));
             } catch (IllegalArgumentException ignored) {
                 io.craftrealm.core.CraftRealmCore.logger()
                         .warning("Ignoring cosmetic with unknown type '" + type + "': " + id);
@@ -473,6 +473,11 @@ public final class ConfigLoader {
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private static Object value(Map<?, ?> values, String key, Object fallback) {
+        Object value = values.get(key);
+        return value == null ? fallback : value;
+    }
 
     private static double number(Object raw, double fallback) {
         if (raw == null) {
