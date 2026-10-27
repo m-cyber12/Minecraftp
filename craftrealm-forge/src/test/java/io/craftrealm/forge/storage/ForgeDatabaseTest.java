@@ -140,6 +140,31 @@ final class ForgeDatabaseTest {
     }
 
     @Test
+    void dailyProfessionQuestProgressAndRewardAreDurableAndSingleClaim() throws Exception {
+        UUID worker = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("quests.db"), 1,
+                LoggerFactory.getLogger("forge-quests-test"))) {
+            database.open();
+            database.balance(worker, "Worker", 10_000).join();
+            database.chooseJob(worker, "MINER").join();
+            for (int i = 0; i < 2; i++) {
+                assertTrue(database.awardJob(worker, "Worker", "MINER", 100,
+                        10_000, 0.05, 4, 50, 10_000, 1_000_000).join().success());
+            }
+            ForgeDatabase.QuestState ready = database.questState(worker, 2).join();
+            assertEquals(2, ready.progress());
+            assertTrue(ready.readyToClaim());
+            ForgeDatabase.QuestClaim reward = database.claimQuest(worker, "Worker", 2,
+                    500, 10_000, 1_000_000).join();
+            assertTrue(reward.success());
+            assertEquals(500L, reward.rewardCents());
+            assertEquals(10_700L, reward.balanceCents());
+            assertEquals("already-claimed", database.claimQuest(worker, "Worker", 2,
+                    500, 10_000, 1_000_000).join().failure());
+        }
+    }
+
+    @Test
     void professionRewardsAreAtomicAndLevelUp() throws Exception {
         UUID worker = UUID.randomUUID();
         try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("jobs.db"), 1,

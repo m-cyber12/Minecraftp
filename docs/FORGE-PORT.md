@@ -16,12 +16,13 @@ Forge mod.
 The Forge implementation now has a self-contained SQLite/Hikari storage layer,
 account creation on player login, a durable cents-based transaction ledger, and
 native Brigadier commands for `/balance` (`/bal`), `/pay`, `/baltop`, `/bank`,
-`/claim`, `/unclaim`, `/claims`, `/jobs`, `/market`, `/shop buy` and `/sell`.
+`/claim`, `/unclaim`, `/claims`, `/jobs`, `/quests`, `/market`, `/shop buy` and `/sell`.
 The configurable item market seeds its catalogue once, persists dynamic price
 pressure and trades atomically against the wallet/ledger. Operator-only `/cradmin
 give` and `/cradmin take` adjustments are audited through the economy ledger.
 `/event start` schedules temporary server-wide profession reward multipliers and
-`/event stop` cancels them. Bank transfers are atomic; the bank
+`/event stop` cancels them. Daily profession quests persist action progress and
+allow a single claim for a configurable reward. Bank transfers are atomic; the bank
 applies configurable daily interest, supports term loans, and applies a one-time
 late penalty after a two-day grace period. Chunk claims persist and protect block
 break, placement and right-click interactions. The five job paths award

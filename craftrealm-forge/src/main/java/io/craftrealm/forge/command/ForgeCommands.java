@@ -80,6 +80,10 @@ public final class ForgeCommands {
                 .executes(context -> unclaim(context.getSource(), claims)));
         dispatcher.register(Commands.literal("claims")
                 .executes(context -> listClaims(context.getSource(), claims)));
+        dispatcher.register(Commands.literal("quests")
+                .executes(context -> questStatus(context.getSource(), database, logger))
+                .then(Commands.literal("claim")
+                        .executes(context -> claimQuest(context.getSource(), database, logger))));
         dispatcher.register(Commands.literal("jobs")
                 .executes(context -> jobStatus(context.getSource(), database, logger))
                 .then(Commands.literal("choose")
@@ -140,7 +144,7 @@ public final class ForgeCommands {
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /cradmin"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /event, /cradmin"), false);
                     return 1;
                 }));
     }
@@ -517,6 +521,54 @@ public final class ForgeCommands {
             else source.sendSuccess(() -> Component.literal("Your profession is now "
                     + job.substring(0, 1) + job.substring(1).toLowerCase(Locale.ROOT) + "."), false);
         }));
+        return 1;
+    }
+
+    private static int questStatus(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        int target = ForgeConfig.QUEST_ACTIONS_REQUIRED.get();
+        store.questState(player.getUUID(), target).whenComplete((state, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else if (state.claimed()) source.sendSuccess(() -> Component.literal(
+                    "Daily profession quest completed. A new quest is available after the daily reset."), false);
+            else if (state.readyToClaim()) source.sendSuccess(() -> Component.literal(
+                    "Daily profession quest complete! Claim " + format(toCents(ForgeConfig.QUEST_REWARD.get()))
+                            + " with /quests claim."), false);
+            else source.sendSuccess(() -> Component.literal("Daily profession quest: " + state.progress()
+                    + "/" + state.actionsRequired() + " successful profession actions. Reward: "
+                    + format(toCents(ForgeConfig.QUEST_REWARD.get())) + "."), false);
+        }));
+        return 1;
+    }
+
+    private static int claimQuest(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        long reward = toCents(ForgeConfig.QUEST_REWARD.get());
+        store.claimQuest(player.getUUID(), player.getGameProfile().getName(),
+                        ForgeConfig.QUEST_ACTIONS_REQUIRED.get(), reward, startingCents(),
+                        toCents(ForgeConfig.MAX_BALANCE.get()))
+                .whenComplete((result, failure) -> source.getServer().execute(() -> {
+                    if (failure != null) reportFailure(source, failure, logger);
+                    else if (!result.success()) source.sendFailure(Component.literal(switch (result.failure()) {
+                        case "already-claimed" -> "You have already claimed today's quest reward.";
+                        case "wallet-limit" -> "Your wallet is too close to its limit to claim the reward.";
+                        default -> "Complete today's profession actions before claiming the reward.";
+                    }));
+                    else source.sendSuccess(() -> Component.literal("Daily quest reward claimed: "
+                            + format(result.rewardCents()) + ". Wallet: " + format(result.balanceCents())), false);
+                }));
         return 1;
     }
 

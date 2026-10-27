@@ -118,6 +118,14 @@ public final class ForgeDatabase implements AutoCloseable {
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
             statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_daily_quests (
+                        uuid TEXT PRIMARY KEY NOT NULL,
+                        day_key BIGINT NOT NULL,
+                        progress INTEGER NOT NULL DEFAULT 0,
+                        claimed INTEGER NOT NULL DEFAULT 0
+                    )
+                    """);
+            statement.execute("""
                     CREATE TABLE IF NOT EXISTS cr_market (
                         item_id TEXT PRIMARY KEY NOT NULL,
                         base_price_cents INTEGER NOT NULL CHECK(base_price_cents > 0),
@@ -763,10 +771,99 @@ public final class ForgeDatabase implements AutoCloseable {
         });
     }
 
+    public CompletableFuture<QuestState> questState(UUID uuid, int actionsRequired) {
+        return supply(connection -> {
+            long today = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT day_key,progress,claimed FROM cr_daily_quests WHERE uuid=?")) {
+                query.setString(1, uuid.toString());
+                try (ResultSet rows = query.executeQuery()) {
+                    if (!rows.next() || rows.getLong("day_key") != today) {
+                        return new QuestState(0, actionsRequired, false, today);
+                    }
+                    return new QuestState(rows.getInt("progress"), actionsRequired,
+                            rows.getInt("claimed") != 0, today);
+                }
+            }
+        });
+    }
+
+    public CompletableFuture<QuestClaim> claimQuest(UUID uuid, String playerName, int actionsRequired,
+                                                     long rewardCents, long initialBalanceCents,
+                                                     long maxBalanceCents) {
+        if (actionsRequired < 1 || rewardCents < 0) {
+            return CompletableFuture.completedFuture(QuestClaim.failed("configuration"));
+        }
+        return supply(connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                ensureAccount(connection, uuid, playerName, initialBalanceCents);
+                long today = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
+                int progress;
+                boolean claimed;
+                try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT day_key,progress,claimed FROM cr_daily_quests WHERE uuid=?")) {
+                    query.setString(1, uuid.toString());
+                    try (ResultSet rows = query.executeQuery()) {
+                        if (!rows.next() || rows.getLong("day_key") != today) {
+                            connection.rollback();
+                            return QuestClaim.failed("not-ready");
+                        }
+                        progress = rows.getInt("progress");
+                        claimed = rows.getInt("claimed") != 0;
+                    }
+                }
+                if (claimed) {
+                    connection.rollback();
+                    return QuestClaim.failed("already-claimed");
+                }
+                if (progress < actionsRequired) {
+                    connection.rollback();
+                    return QuestClaim.failed("not-ready");
+                }
+                long now = System.currentTimeMillis();
+                if (rewardCents > 0) {
+                    try (PreparedStatement credit = connection.prepareStatement(
+                            "UPDATE cr_accounts SET balance_cents=balance_cents+?,updated_at=? WHERE uuid=? AND balance_cents<=?")) {
+                        credit.setLong(1, rewardCents);
+                        credit.setLong(2, now);
+                        credit.setString(3, uuid.toString());
+                        credit.setLong(4, maxBalanceCents - rewardCents);
+                        if (credit.executeUpdate() == 0) {
+                            connection.rollback();
+                            return QuestClaim.failed("wallet-limit");
+                        }
+                    }
+                    insertTransaction(connection, "QUEST_REWARD", null, uuid, rewardCents,
+                            "daily profession quest", null, now);
+                }
+                try (PreparedStatement update = connection.prepareStatement(
+                        "UPDATE cr_daily_quests SET claimed=1 WHERE uuid=? AND day_key=? AND claimed=0")) {
+                    update.setString(1, uuid.toString());
+                    update.setLong(2, today);
+                    if (update.executeUpdate() != 1) {
+                        connection.rollback();
+                        return QuestClaim.failed("already-claimed");
+                    }
+                }
+                long balance = readBalance(connection, uuid);
+                connection.commit();
+                return new QuestClaim(true, null, rewardCents, balance);
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
     public CompletableFuture<JobAward> awardJob(UUID uuid, String playerName, String job,
                                                   long basePayoutCents, long dailyCapCents,
                                                   double multiplierPerLevel, int xpPerAction, int maxLevel,
-                                                  long initialBalanceCents, long maxBalanceCents) {
+                                                  long initialBalanceCents,
+                                                  long maxBalanceCents) {
         return supply(connection -> {
             boolean previousAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
@@ -846,6 +943,16 @@ public final class ForgeDatabase implements AutoCloseable {
                     update.setString(5, uuid.toString());
                     update.setString(6, job);
                     update.executeUpdate();
+                }
+                try (PreparedStatement quest = connection.prepareStatement(
+                        "INSERT INTO cr_daily_quests(uuid,day_key,progress,claimed) VALUES(?,?,1,0) "
+                                + "ON CONFLICT(uuid) DO UPDATE SET "
+                                + "progress=CASE WHEN cr_daily_quests.day_key=excluded.day_key THEN cr_daily_quests.progress+1 ELSE 1 END, "
+                                + "claimed=CASE WHEN cr_daily_quests.day_key=excluded.day_key THEN cr_daily_quests.claimed ELSE 0 END, "
+                                + "day_key=excluded.day_key")) {
+                    quest.setString(1, uuid.toString());
+                    quest.setLong(2, today);
+                    quest.executeUpdate();
                 }
                 insertTransaction(connection, "JOB_INCOME", null, uuid, amount,
                         job + " work", null, now);
@@ -1108,6 +1215,14 @@ public final class ForgeDatabase implements AutoCloseable {
                                           long wallet, long nextPrice) {
             return new MarketTrade(true, null, itemId, quantity, unitPrice, total, wallet, nextPrice);
         }
+    }
+
+    public record QuestState(int progress, int actionsRequired, boolean claimed, long dayKey) {
+        public boolean readyToClaim() { return progress >= actionsRequired && !claimed; }
+    }
+
+    public record QuestClaim(boolean success, String failure, long rewardCents, long balanceCents) {
+        static QuestClaim failed(String reason) { return new QuestClaim(false, reason, 0, 0); }
     }
 
     public record JobState(String activeJob, int level, long xp, long earnedTodayCents, long dayKey) { }
