@@ -15,12 +15,14 @@ Forge mod.
 
 The Forge implementation now has a self-contained SQLite/Hikari storage layer,
 account creation on player login, a durable cents-based transaction ledger, and
-native Brigadier commands for `/balance` (`/bal`), `/pay`, `/baltop` and `/bank`.
-Bank transfers are atomic; the bank applies configurable daily interest, supports
-term loans, and applies a one-time late penalty after a two-day grace period.
-Player feedback returns to the server thread after asynchronous SQL work. These
-are the first ported features; the rest of the Paper feature set remains
-unported.
+native Brigadier commands for `/balance` (`/bal`), `/pay`, `/baltop`, `/bank`,
+`/claim`, `/unclaim`, `/claims` and `/jobs`. Bank transfers are atomic; the bank
+applies configurable daily interest, supports term loans, and applies a one-time
+late penalty after a two-day grace period. Chunk claims persist and protect block
+break, placement and right-click interactions. The five job paths award
+configurable work income, XP and levels, with daily caps and a placed-block
+anti-farm tracker. Player feedback returns to the server thread after asynchronous
+SQL work. The rest of the Paper feature set remains unported.
 
 ## Build
 

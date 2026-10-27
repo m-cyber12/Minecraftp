@@ -88,4 +88,26 @@ final class ForgeDatabaseTest {
             assertTrue(database.loadClaims().join().isEmpty());
         }
     }
+
+    @Test
+    void professionRewardsAreAtomicAndLevelUp() throws Exception {
+        UUID worker = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("jobs.db"), 1,
+                LoggerFactory.getLogger("forge-jobs-test"))) {
+            database.open();
+            database.balance(worker, "Worker", 1_000).join();
+            database.chooseJob(worker, "MINER").join();
+            ForgeDatabase.JobState selected = database.jobState(worker).join();
+            assertEquals("MINER", selected.activeJob());
+            ForgeDatabase.JobAward award = database.awardJob(worker, "Worker", "MINER",
+                    100, 10_000, 0.05, 100, 50, 0, 100_000).join();
+            assertTrue(award.success());
+            assertTrue(award.levelUp());
+            assertEquals(2, award.level());
+            assertEquals(0L, award.xp());
+            assertEquals(1_100L, award.walletCents());
+            assertEquals("not-employed", database.awardJob(worker, "Worker", "FARMER",
+                    100, 10_000, 0.05, 100, 50, 0, 100_000).join().failure());
+        }
+    }
 }

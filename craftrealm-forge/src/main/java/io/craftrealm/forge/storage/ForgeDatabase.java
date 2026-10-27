@@ -115,6 +115,23 @@ public final class ForgeDatabase implements AutoCloseable {
                     )
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_player_job (
+                        uuid TEXT PRIMARY KEY NOT NULL,
+                        active_job TEXT NOT NULL
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_jobs (
+                        uuid TEXT NOT NULL,
+                        job TEXT NOT NULL,
+                        level INTEGER NOT NULL DEFAULT 1,
+                        xp BIGINT NOT NULL DEFAULT 0,
+                        earned_cents INTEGER NOT NULL DEFAULT 0,
+                        day_key BIGINT NOT NULL,
+                        PRIMARY KEY(uuid, job)
+                    )
+                    """);
             if (!connection.isValid(3)) {
                 throw new SQLException("SQLite connection failed validation");
             }
@@ -525,6 +542,150 @@ public final class ForgeDatabase implements AutoCloseable {
         }
     }
 
+    public CompletableFuture<Boolean> chooseJob(UUID uuid, String job) {
+        return supply(connection -> inTransaction(connection, ignored -> {
+            long today = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
+            try (PreparedStatement insert = connection.prepareStatement(
+                    "INSERT OR IGNORE INTO cr_jobs(uuid,job,level,xp,earned_cents,day_key) VALUES(?,?,1,0,0,?)")) {
+                insert.setString(1, uuid.toString());
+                insert.setString(2, job);
+                insert.setLong(3, today);
+                insert.executeUpdate();
+            }
+            try (PreparedStatement upsert = connection.prepareStatement(
+                    "INSERT INTO cr_player_job(uuid,active_job) VALUES(?,?) "
+                            + "ON CONFLICT(uuid) DO UPDATE SET active_job=excluded.active_job")) {
+                upsert.setString(1, uuid.toString());
+                upsert.setString(2, job);
+                upsert.executeUpdate();
+            }
+            return true;
+        }));
+    }
+
+    public CompletableFuture<JobState> jobState(UUID uuid) {
+        return supply(connection -> {
+            String activeJob = null;
+            try (PreparedStatement active = connection.prepareStatement(
+                    "SELECT active_job FROM cr_player_job WHERE uuid=?")) {
+                active.setString(1, uuid.toString());
+                try (ResultSet rows = active.executeQuery()) {
+                    if (rows.next()) activeJob = rows.getString(1);
+                }
+            }
+            if (activeJob == null) return new JobState(null, 0, 0, 0, 0);
+            long today = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT level,xp,earned_cents,day_key FROM cr_jobs WHERE uuid=? AND job=?")) {
+                query.setString(1, uuid.toString());
+                query.setString(2, activeJob);
+                try (ResultSet rows = query.executeQuery()) {
+                    if (!rows.next()) return new JobState(activeJob, 1, 0, 0, today);
+                    long earned = rows.getLong("day_key") == today ? rows.getLong("earned_cents") : 0;
+                    return new JobState(activeJob, rows.getInt("level"), rows.getLong("xp"), earned, today);
+                }
+            }
+        });
+    }
+
+    public CompletableFuture<JobAward> awardJob(UUID uuid, String playerName, String job,
+                                                  long basePayoutCents, long dailyCapCents,
+                                                  double multiplierPerLevel, int xpPerAction, int maxLevel,
+                                                  long initialBalanceCents, long maxBalanceCents) {
+        return supply(connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                String activeJob = null;
+                try (PreparedStatement active = connection.prepareStatement(
+                        "SELECT active_job FROM cr_player_job WHERE uuid=?")) {
+                    active.setString(1, uuid.toString());
+                    try (ResultSet rows = active.executeQuery()) {
+                        if (rows.next()) activeJob = rows.getString(1);
+                    }
+                }
+                if (!job.equals(activeJob)) {
+                    connection.rollback();
+                    return JobAward.failed("not-employed");
+                }
+                ensureAccount(connection, uuid, playerName, initialBalanceCents);
+                long today = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
+                try (PreparedStatement insert = connection.prepareStatement(
+                        "INSERT OR IGNORE INTO cr_jobs(uuid,job,level,xp,earned_cents,day_key) VALUES(?,?,1,0,0,?)")) {
+                    insert.setString(1, uuid.toString());
+                    insert.setString(2, job);
+                    insert.setLong(3, today);
+                    insert.executeUpdate();
+                }
+                int level;
+                long xp;
+                long earned;
+                long oldDay;
+                try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT level,xp,earned_cents,day_key FROM cr_jobs WHERE uuid=? AND job=?")) {
+                    query.setString(1, uuid.toString());
+                    query.setString(2, job);
+                    try (ResultSet rows = query.executeQuery()) {
+                        if (!rows.next()) throw new SQLException("job progress missing after insert");
+                        level = rows.getInt("level");
+                        xp = rows.getLong("xp");
+                        earned = rows.getLong("earned_cents");
+                        oldDay = rows.getLong("day_key");
+                    }
+                }
+                if (oldDay != today) earned = 0;
+                long multiplierBasisPoints = Math.round((1.0 + Math.max(0.0, multiplierPerLevel) * (level - 1)) * 10_000);
+                long amount = java.math.BigDecimal.valueOf(basePayoutCents)
+                        .multiply(java.math.BigDecimal.valueOf(multiplierBasisPoints))
+                        .divide(java.math.BigDecimal.valueOf(10_000), 0, java.math.RoundingMode.HALF_UP)
+                        .longValueExact();
+                amount = Math.min(amount, Math.max(0, dailyCapCents - earned));
+                if (amount <= 0) {
+                    connection.rollback();
+                    return JobAward.failed("daily-cap");
+                }
+                long now = System.currentTimeMillis();
+                try (PreparedStatement credit = connection.prepareStatement(
+                        "UPDATE cr_accounts SET balance_cents=balance_cents+?,updated_at=? WHERE uuid=? AND balance_cents<=?")) {
+                    credit.setLong(1, amount);
+                    credit.setLong(2, now);
+                    credit.setString(3, uuid.toString());
+                    credit.setLong(4, maxBalanceCents - amount);
+                    if (credit.executeUpdate() == 0) {
+                        connection.rollback();
+                        return JobAward.failed("wallet-limit");
+                    }
+                }
+                long newXp = xp + Math.max(1, xpPerAction);
+                int newLevel = level;
+                while (newLevel < maxLevel && newXp >= (long) newLevel * 100L) {
+                    newXp -= (long) newLevel * 100L;
+                    newLevel++;
+                }
+                try (PreparedStatement update = connection.prepareStatement(
+                        "UPDATE cr_jobs SET level=?,xp=?,earned_cents=?,day_key=? WHERE uuid=? AND job=?")) {
+                    update.setInt(1, newLevel);
+                    update.setLong(2, newXp);
+                    update.setLong(3, earned + amount);
+                    update.setLong(4, today);
+                    update.setString(5, uuid.toString());
+                    update.setString(6, job);
+                    update.executeUpdate();
+                }
+                insertTransaction(connection, "JOB_INCOME", null, uuid, amount,
+                        job + " work", null, now);
+                long wallet = readBalance(connection, uuid);
+                connection.commit();
+                return JobAward.success(amount, wallet, newLevel, newXp, newLevel > level, earned + amount);
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
     public CompletableFuture<List<Claim>> loadClaims() {
         return supply(connection -> {
             List<Claim> result = new ArrayList<>();
@@ -752,6 +913,19 @@ public final class ForgeDatabase implements AutoCloseable {
 
         static Payment recipientAtLimit() {
             return new Payment(false, false, true, 0, 0);
+        }
+    }
+
+    public record JobState(String activeJob, int level, long xp, long earnedTodayCents, long dayKey) { }
+
+    public record JobAward(boolean success, String failure, long amountCents, long walletCents,
+                           int level, long xp, boolean levelUp, long earnedTodayCents) {
+        static JobAward success(long amount, long wallet, int level, long xp,
+                                boolean levelUp, long earned) {
+            return new JobAward(true, null, amount, wallet, level, xp, levelUp, earned);
+        }
+        static JobAward failed(String reason) {
+            return new JobAward(false, reason, 0, 0, 0, 0, false, 0);
         }
     }
 

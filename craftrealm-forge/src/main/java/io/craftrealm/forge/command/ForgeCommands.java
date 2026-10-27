@@ -1,6 +1,7 @@
 package io.craftrealm.forge.command;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
 import io.craftrealm.forge.api.ForgeTransactionType;
@@ -75,6 +76,12 @@ public final class ForgeCommands {
                 .executes(context -> unclaim(context.getSource(), claims)));
         dispatcher.register(Commands.literal("claims")
                 .executes(context -> listClaims(context.getSource(), claims)));
+        dispatcher.register(Commands.literal("jobs")
+                .executes(context -> jobStatus(context.getSource(), database, logger))
+                .then(Commands.literal("choose")
+                        .then(Commands.argument("job", StringArgumentType.word())
+                                .executes(context -> chooseJob(context.getSource(),
+                                        StringArgumentType.getString(context, "job"), database, logger)))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
@@ -188,6 +195,49 @@ public final class ForgeCommands {
                                 }
                             }));
                 }));
+        return 1;
+    }
+
+    private static int chooseJob(CommandSourceStack source, String rawJob,
+                                 Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        String job = rawJob.toUpperCase(Locale.ROOT);
+        if (!java.util.Set.of("MINER", "FARMER", "HUNTER", "FISHER", "BUILDER").contains(job)) {
+            source.sendFailure(Component.literal("Choose Miner, Farmer, Hunter, Fisher, or Builder."));
+            return 0;
+        }
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        store.chooseJob(player.getUUID(), job).whenComplete((selected, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else source.sendSuccess(() -> Component.literal("Your profession is now "
+                    + job.substring(0, 1) + job.substring(1).toLowerCase(Locale.ROOT) + "."), false);
+        }));
+        return 1;
+    }
+
+    private static int jobStatus(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        store.jobState(player.getUUID()).whenComplete((state, failure) -> source.getServer().execute(() -> {
+            if (failure != null) {
+                reportFailure(source, failure, logger);
+            } else if (state.activeJob() == null) {
+                source.sendSuccess(() -> Component.literal("Choose a profession with /jobs choose <miner|farmer|hunter|fisher|builder>."), false);
+            } else {
+                source.sendSuccess(() -> Component.literal(state.activeJob() + " · level " + state.level()
+                        + " · XP " + state.xp() + " · earned today " + format(state.earnedTodayCents())), false);
+            }
+        }));
         return 1;
     }
 

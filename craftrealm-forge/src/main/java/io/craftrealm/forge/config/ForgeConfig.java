@@ -19,6 +19,15 @@ public final class ForgeConfig {
     public static final ForgeConfigSpec.DoubleValue BANK_LOAN_PENALTY_PERCENT;
     public static final ForgeConfigSpec.DoubleValue CLAIM_COST;
     public static final ForgeConfigSpec.IntValue MAX_CLAIMS_PER_PLAYER;
+    public static final ForgeConfigSpec.DoubleValue JOB_MINER_PAYOUT;
+    public static final ForgeConfigSpec.DoubleValue JOB_FARMER_PAYOUT;
+    public static final ForgeConfigSpec.DoubleValue JOB_HUNTER_PAYOUT;
+    public static final ForgeConfigSpec.DoubleValue JOB_FISHER_PAYOUT;
+    public static final ForgeConfigSpec.DoubleValue JOB_BUILDER_PAYOUT;
+    public static final ForgeConfigSpec.DoubleValue JOB_DAILY_CAP;
+    public static final ForgeConfigSpec.DoubleValue JOB_LEVEL_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue JOB_XP_PER_ACTION;
+    public static final ForgeConfigSpec.IntValue JOB_MAX_LEVEL;
     public static final ForgeConfigSpec SPEC;
 
     static {
@@ -41,6 +50,17 @@ public final class ForgeConfig {
         BUILDER.push("claims");
         CLAIM_COST = BUILDER.defineInRange("cost-per-chunk", 250.0, 0.0, 1.0e12);
         MAX_CLAIMS_PER_PLAYER = BUILDER.defineInRange("max-per-player", 16, 1, 1000);
+        BUILDER.pop();
+        BUILDER.push("jobs");
+        JOB_MINER_PAYOUT = BUILDER.defineInRange("miner-payout", 0.25, 0.0, 1_000_000.0);
+        JOB_FARMER_PAYOUT = BUILDER.defineInRange("farmer-payout", 0.20, 0.0, 1_000_000.0);
+        JOB_HUNTER_PAYOUT = BUILDER.defineInRange("hunter-payout", 0.50, 0.0, 1_000_000.0);
+        JOB_FISHER_PAYOUT = BUILDER.defineInRange("fisher-payout", 0.30, 0.0, 1_000_000.0);
+        JOB_BUILDER_PAYOUT = BUILDER.defineInRange("builder-payout", 0.10, 0.0, 1_000_000.0);
+        JOB_DAILY_CAP = BUILDER.defineInRange("daily-cap", 5_000.0, 0.0, 1.0e12);
+        JOB_LEVEL_MULTIPLIER = BUILDER.defineInRange("multiplier-per-level", 0.05, 0.0, 1.0);
+        JOB_XP_PER_ACTION = BUILDER.defineInRange("xp-per-action", 4, 1, 100_000);
+        JOB_MAX_LEVEL = BUILDER.defineInRange("max-level", 50, 1, 1000);
         BUILDER.pop();
         SPEC = BUILDER.build();
     }
