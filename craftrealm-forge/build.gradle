@@ -1,0 +1,76 @@
+/*
+ * Native Forge 1.20.1 edition.
+ *
+ * This is intentionally an independent adapter: the existing Paper modules use
+ * Bukkit types throughout and cannot be loaded on a Forge-only server. Domain
+ * and persistence features are being ported into this Forge-native module in
+ * stages rather than shipping Bukkit classes into the mod.
+ */
+plugins {
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'eclipse'
+    id 'idea'
+}
+
+base {
+    archivesName = 'CraftRealm-Forge'
+}
+
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+    copyIdeResources = true
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                craftrealm {
+                    source sourceSets.main
+                }
+            }
+        }
+        server {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            args '--nogui'
+            mods {
+                craftrealm {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.20.1-47.4.0'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('META-INF/mods.toml') {
+        expand 'version': project.version
+    }
+}
+
+jar {
+    archiveBaseName = 'CraftRealm-Forge'
+    manifest {
+        attributes([
+                'Specification-Title'     : 'CraftRealm',
+                'Specification-Vendor'    : 'CraftRealm contributors',
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.version,
+                'Implementation-Vendor'   : 'CraftRealm contributors'
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
+tasks.named('assemble') {
+    dependsOn 'reobfJar'
+}

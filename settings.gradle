@@ -15,6 +15,13 @@
  *   craftrealm-plugin     the shaded, runnable CraftRealm.jar (wiring + resources)
  */
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = 'https://maven.minecraftforge.net/' }
+    }
+}
+
 rootProject.name = 'CraftRealm'
 
 include 'craftrealm-api'
@@ -24,3 +31,4 @@ include 'craftrealm-admin'
 include 'craftrealm-events'
 include 'craftrealm-web'
 include 'craftrealm-plugin'
+include 'craftrealm-forge'

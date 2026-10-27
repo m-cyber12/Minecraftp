@@ -18,6 +18,8 @@ allprojects {
         mavenCentral()
         // Paper / Adventure / MiniMessage
         maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
+        // ForgeGradle and Forge userdev artifacts
+        maven { url = uri('https://maven.minecraftforge.net/') }
         // VaultAPI
         maven { url = uri('https://jitpack.io') }
     }
@@ -26,16 +28,21 @@ allprojects {
 subprojects {
     apply plugin: 'java-library'
 
+    // Paper 1.21 targets Java 21; Forge 1.20.1 runs on Java 17. Keep the
+    // native Forge adapter on the runtime's bytecode level while preserving the
+    // existing Paper build as a separately compiled legacy target.
+    def craftRealmJava = project.name == 'craftrealm-forge' ? 17 : 21
+
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
+            languageVersion = JavaLanguageVersion.of(craftRealmJava)
         }
         withSourcesJar()
     }
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
-        options.release = 21
+        options.release = craftRealmJava
         // Fail loudly on the things that bite plugin authors: unchecked misuse of
         // raw Bukkit types and silent deprecation drift.
         options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked', '-parameters']
@@ -55,14 +62,15 @@ subprojects {
     }
 
     dependencies {
-        // The Paper API is provided by the server at runtime — never bundled.
-        compileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
+        if (project.name != 'craftrealm-forge') {
+            // Paper API is server-provided and only used by the legacy Paper edition.
+            compileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
+            testCompileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
+        }
 
         testImplementation platform("org.junit:junit-bom:${junitVersion}")
         testImplementation 'org.junit.jupiter:junit-jupiter'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-        // Unit tests that touch Bukkit utility types get a compile-time API.
-        testCompileOnly "io.papermc.paper:paper-api:${paperApiVersion}"
     }
 
     // Keep module jars lean; the shipping jar is produced by :craftrealm-plugin.

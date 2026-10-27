@@ -1,7 +1,11 @@
 # CraftRealm
 
-**A management panel *and* a full custom economy for Paper 1.21.x — built like a
-craftsman's workshop, not a neon SaaS dashboard.**
+**CraftRealm's full feature set currently runs as a Paper 1.21.4 plugin. A native
+Forge 1.20.1 edition is now being ported in `craftrealm-forge`.**
+
+> **Forge status:** The Forge module currently provides the native mod bootstrap
+> and build target; it is not feature-complete yet. The Bukkit/Paper JAR will not
+> run on Forge. See [the Forge port plan](docs/FORGE-PORT.md) for scope and status.
 
 CraftRealm replaces the usual pile of economy plugins with one coherent system:
 Crowns in a double-entry ledger, a vault that pays interest, loans with due dates,
@@ -110,10 +114,11 @@ and an append-only audit trail of every staff action.
 
 | | |
 | --- | --- |
-| Server | **Paper 1.21.x** (built against the Paper 1.21.4 API) |
-| Java | **21** (required by Paper 1.20.5+) |
-| Build | Gradle 8.10+ — the wrapper in this repository is enough |
-| Optional | Vault (`softdepend`), MySQL 8 if you run a network |
+| Target | Forge 1.20.1 mod (port in progress) or legacy Paper 1.21.4 plugin |
+| Forge runtime | Minecraft **1.20.1**, Forge **47.x**, Java **17** |
+| Paper runtime | Paper **1.21.4**, Java **21** (legacy edition) |
+| Build | Gradle 8.10.2 wrapper; GitHub Actions installs both JDK toolchains |
+| Optional | Vault for the legacy Paper plugin, MySQL 8 for either edition when ported |
 
 SQLite is the default backend and needs no setup.
 
@@ -125,21 +130,22 @@ SQLite is the default backend and needs no setup.
 git clone <this repository> CraftRealm
 cd CraftRealm
 
-# Java 21 must be the active JDK
-java -version
-
-# Tests + the shaded plugin jar
+# Build/test all configured targets (JDK 17 and 21 toolchains required)
 ./gradlew build
 
-# (equivalent shortcuts)
+# Native Forge 1.20.1 mod (Java 17 bytecode)
+./gradlew :craftrealm-forge:build
+
+# Legacy Paper 1.21.4 plugin (Java 21 bytecode)
 ./gradlew :craftrealm-plugin:shadowJar
-./gradlew dist                 # builds the jar and nothing else
+./gradlew dist                 # legacy Paper jar only
 ```
 
-The artifact lands at:
+Artifacts land at:
 
 ```
-craftrealm-plugin/build/libs/CraftRealm-1.0.0.jar
+craftrealm-forge/build/libs/CraftRealm-Forge-1.0.0.jar  # Forge mod bootstrap; port in progress
+craftrealm-plugin/build/libs/CraftRealm-1.0.0.jar       # full legacy Paper implementation
 ```
 
 > **Note on offline builds.** The first build downloads the Paper API,

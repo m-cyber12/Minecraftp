@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="craftrealm"
+version="${version}"
+displayName="CraftRealm"
+authors="CraftRealm contributors"
+description='''
+A craftsman's-workshop themed server economy and management mod for Minecraft Forge 1.20.1.
+'''
+
+[[dependencies.craftrealm]]
+modId="forge"
+mandatory=true
+versionRange="[47.0.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.craftrealm]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"

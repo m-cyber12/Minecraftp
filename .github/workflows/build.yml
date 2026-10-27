@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    name: Java 21 / Gradle
+    name: Java 17 + 21 / Gradle
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -26,7 +26,13 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Install Java 17 Forge toolchain
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up JDK 21 for Paper modules and Gradle
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -45,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          ./gradlew compileJava compileTestJava --stacktrace --console=plain 2>&1 | tee compile.log
+          ./gradlew compileJava compileTestJava :craftrealm-forge:compileJava :craftrealm-forge:compileTestJava --stacktrace --console=plain 2>&1 | tee compile.log
           result=${PIPESTATUS[0]}
           python3 .github/scripts/report_compile.py compile.log
           exit "$result"
@@ -59,20 +65,28 @@ jobs:
           python3 .github/scripts/report_tests.py
           exit "$result"
 
-      - name: Build plugin jar and resource pack
+      - name: Build Forge mod, legacy Paper jar and resource pack
         run: >-
-          ./gradlew :craftrealm-plugin:shadowJar
+          ./gradlew :craftrealm-forge:reobfJar
+          :craftrealm-plugin:shadowJar
           :craftrealm-plugin:buildResourcePack
           --stacktrace --console=plain
 
-      - name: Upload plugin jar and resource pack
+      - name: Upload Forge 1.20.1 mod
         uses: actions/upload-artifact@v4
         with:
-          name: CraftRealm
+          name: CraftRealm-Forge-1.20.1
+          if-no-files-found: error
+          path: craftrealm-forge/build/libs/*1.0.0.jar
+
+      - name: Upload legacy Paper artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CraftRealm-Paper-legacy
           if-no-files-found: error
           path: |
-            craftrealm-plugin/build/libs/*.jar
-            craftrealm-plugin/build/dist/*.zip
+            craftrealm-plugin/build/libs/CraftRealm-1.0.0.jar
+            craftrealm-plugin/build/dist/CraftRealm-ResourcePack.zip
 
       - name: Upload test reports
         if: always()
