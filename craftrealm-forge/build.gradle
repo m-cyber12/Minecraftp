@@ -57,8 +57,10 @@ dependencies {
     def sqlite = dependencies.create('org.xerial:sqlite-jdbc:3.46.1.3')
     add('jarJar', hikari)
     add('jarJar', sqlite)
-    jarJar.pin(hikari, '[5.1.0,5.1.1)')
-    jarJar.pin(sqlite, '[3.46.1.3,3.46.1.4)')
+    jarJar.pin(hikari, '5.1.0')
+    jarJar.ranged(hikari, '[5.1.0,5.1.1)')
+    jarJar.pin(sqlite, '3.46.1.3')
+    jarJar.ranged(sqlite, '[3.46.1.3,3.46.1.4)')
 }
 
 jarJar.enable()
