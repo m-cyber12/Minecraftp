@@ -552,6 +552,46 @@ public final class ForgeDatabase implements AutoCloseable {
         }
     }
 
+    /** Staff wallet adjustment with the administrator recorded in the immutable transaction ledger. */
+    public CompletableFuture<AdminAdjustment> adminAdjust(UUID administrator, UUID target, String targetName,
+                                                            long amountCents, boolean credit,
+                                                            long initialBalanceCents, long maxBalanceCents) {
+        if (amountCents <= 0) return CompletableFuture.completedFuture(AdminAdjustment.failed("amount"));
+        return supply(connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                ensureAccount(connection, target, targetName, initialBalanceCents);
+                long now = System.currentTimeMillis();
+                String sql = credit
+                        ? "UPDATE cr_accounts SET balance_cents=balance_cents+?,updated_at=? WHERE uuid=? AND balance_cents<=?"
+                        : "UPDATE cr_accounts SET balance_cents=balance_cents-?,updated_at=? WHERE uuid=? AND balance_cents>=?";
+                try (PreparedStatement update = connection.prepareStatement(sql)) {
+                    update.setLong(1, amountCents);
+                    update.setLong(2, now);
+                    update.setString(3, target.toString());
+                    update.setLong(4, credit ? maxBalanceCents - amountCents : amountCents);
+                    if (update.executeUpdate() == 0) {
+                        connection.rollback();
+                        return AdminAdjustment.failed(credit ? "wallet-limit" : "wallet-funds");
+                    }
+                }
+                insertTransaction(connection, credit ? "ADMIN_CREDIT" : "ADMIN_DEBIT",
+                        credit ? null : target, credit ? target : null, amountCents,
+                        credit ? "admin grant by " + administrator : "admin withdrawal by " + administrator,
+                        administrator, now);
+                long balance = readBalance(connection, target);
+                connection.commit();
+                return new AdminAdjustment(true, null, balance);
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
     /** Inserts configured market items without overwriting prices already changed by players. */
     public CompletableFuture<Void> seedMarket(Map<String, Long> catalogue) {
         return supply(connection -> inTransaction(connection, ignored -> {
@@ -1048,6 +1088,12 @@ public final class ForgeDatabase implements AutoCloseable {
 
         static Payment recipientAtLimit() {
             return new Payment(false, false, true, 0, 0);
+        }
+    }
+
+    public record AdminAdjustment(boolean success, String failure, long balanceCents) {
+        public static AdminAdjustment failed(String reason) {
+            return new AdminAdjustment(false, reason, 0);
         }
     }
 

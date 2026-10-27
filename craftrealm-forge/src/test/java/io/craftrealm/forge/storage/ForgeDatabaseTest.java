@@ -90,6 +90,26 @@ final class ForgeDatabaseTest {
     }
 
     @Test
+    void staffWalletChangesRespectLimitsAndRecordActor() throws Exception {
+        UUID staff = UUID.randomUUID();
+        UUID target = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("admin.db"), 1,
+                LoggerFactory.getLogger("forge-admin-test"))) {
+            database.open();
+            database.balance(target, "Target", 1_000).join();
+            ForgeDatabase.AdminAdjustment grant = database.adminAdjust(staff, target, "Target",
+                    500, true, 1_000, 2_000).join();
+            assertTrue(grant.success());
+            assertEquals(1_500L, grant.balanceCents());
+            assertEquals("wallet-funds", database.adminAdjust(staff, target, "Target",
+                    2_000, false, 1_000, 2_000).join().failure());
+            assertEquals("wallet-limit", database.adminAdjust(staff, target, "Target",
+                    600, true, 1_000, 2_000).join().failure());
+            assertEquals(1_500L, database.balance(target, "Target", 0).join());
+        }
+    }
+
+    @Test
     void marketTradesUpdateWalletLedgerAndDynamicPricesAtomically() throws Exception {
         UUID trader = UUID.randomUUID();
         try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("market.db"), 1,

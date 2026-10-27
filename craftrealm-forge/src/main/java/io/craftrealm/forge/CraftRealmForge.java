@@ -53,9 +53,15 @@ public final class CraftRealmForge {
         try {
             created.open();
             ForgeClaims loadedClaims = new ForgeClaims(created, LOGGER);
-            loadedClaims.load(created.loadClaims().join());
             claims = loadedClaims;
             database = created;
+            created.loadClaims().whenComplete((loaded, failure) -> event.getServer().execute(() -> {
+                if (failure != null) {
+                    LOGGER.error("Could not load land claims; protection remains fail-closed", failure);
+                } else if (claims == loadedClaims) {
+                    loadedClaims.load(loaded);
+                }
+            }));
             jobListener = new ForgeJobListener(() -> database, LOGGER);
             market = new ForgeMarket(created, LOGGER);
             lastMaintenanceAt = System.currentTimeMillis() - 60_000L;

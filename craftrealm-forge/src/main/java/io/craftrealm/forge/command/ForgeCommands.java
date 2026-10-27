@@ -105,10 +105,26 @@ public final class ForgeCommands {
                                         StringArgumentType.getString(context, "item"),
                                         IntegerArgumentType.getInteger(context, "quantity"),
                                         market, logger)))));
+        dispatcher.register(Commands.literal("cradmin")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("give")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
+                                        .executes(context -> adminAdjust(context.getSource(),
+                                                EntityArgument.getPlayer(context, "player"),
+                                                DoubleArgumentType.getDouble(context, "amount"), true,
+                                                database, logger)))))
+                .then(Commands.literal("take")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
+                                        .executes(context -> adminAdjust(context.getSource(),
+                                                EntityArgument.getPlayer(context, "player"),
+                                                DoubleArgumentType.getDouble(context, "amount"), false,
+                                                database, logger))))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /cradmin"), false);
                     return 1;
                 }));
     }
@@ -218,6 +234,58 @@ public final class ForgeCommands {
                                 }
                             }));
                 }));
+        return 1;
+    }
+
+    private static int adminAdjust(CommandSourceStack source, ServerPlayer target, double rawAmount,
+                                   boolean credit, Supplier<ForgeDatabase> database, Logger logger) {
+        long amount = parseCents(source, rawAmount);
+        if (amount <= 0) return 0;
+        if (amount > toCents(ForgeConfig.MAX_TRANSACTION.get())) {
+            source.sendFailure(Component.literal("Amount exceeds the configured transaction limit."));
+            return 0;
+        }
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        UUID targetId = target.getUUID();
+        UUID actor = source.getEntity() instanceof ServerPlayer staff ? staff.getUUID() : new UUID(0, 0);
+        String targetName = target.getGameProfile().getName();
+        MinecraftServer server = source.getServer();
+        store.balance(targetId, targetName, startingCents()).whenComplete((oldBalance, readFailure) -> server.execute(() -> {
+            if (readFailure != null) {
+                reportFailure(source, readFailure, logger);
+                return;
+            }
+            if (!credit && oldBalance < amount) {
+                source.sendFailure(Component.literal("Target has insufficient funds."));
+                return;
+            }
+            if (credit && oldBalance > toCents(ForgeConfig.MAX_BALANCE.get()) - amount) {
+                source.sendFailure(Component.literal("The adjustment would exceed the configured balance limit."));
+                return;
+            }
+            long newBalance = credit ? oldBalance + amount : oldBalance - amount;
+            ForgeBalanceChangeEvent change = new ForgeBalanceChangeEvent(targetId, oldBalance, newBalance,
+                    ForgeTransactionType.ADMIN_ADJUSTMENT, credit ? "admin grant" : "admin withdrawal", actor);
+            if (MinecraftForge.EVENT_BUS.post(change)) {
+                source.sendFailure(Component.literal("Another mod cancelled this balance change."));
+                return;
+            }
+            store.adminAdjust(actor, targetId, targetName, amount, credit, startingCents(),
+                            toCents(ForgeConfig.MAX_BALANCE.get()))
+                    .whenComplete((result, failure) -> server.execute(() -> {
+                        if (failure != null) reportFailure(source, failure, logger);
+                        else if (!result.success()) source.sendFailure(Component.literal(
+                                result.failure().equals("wallet-funds") ? "Target has insufficient funds."
+                                        : "The adjustment would exceed a configured limit."));
+                        else source.sendSuccess(() -> Component.literal((credit ? "Granted " : "Removed ")
+                                + format(amount) + " " + (credit ? "to " : "from ") + targetName
+                                + ". New balance: " + format(result.balanceCents())), true);
+                    }));
+        }));
         return 1;
     }
 
@@ -423,7 +491,7 @@ public final class ForgeCommands {
         ServerPlayer player = requirePlayer(source);
         if (player == null) return 0;
         ForgeClaims claims = claimsSupplier.get();
-        if (claims == null) {
+        if (claims == null || !claims.isReady()) {
             source.sendFailure(Component.literal("Claim protection is still starting."));
             return 0;
         }
@@ -456,7 +524,7 @@ public final class ForgeCommands {
         ServerPlayer player = requirePlayer(source);
         if (player == null) return 0;
         ForgeClaims claims = claimsSupplier.get();
-        if (claims == null) {
+        if (claims == null || !claims.isReady()) {
             source.sendFailure(Component.literal("Claim protection is still starting."));
             return 0;
         }
@@ -477,7 +545,7 @@ public final class ForgeCommands {
         ServerPlayer player = requirePlayer(source);
         if (player == null) return 0;
         ForgeClaims claims = claimsSupplier.get();
-        if (claims == null) {
+        if (claims == null || !claims.isReady()) {
             source.sendFailure(Component.literal("Claim protection is still starting."));
             return 0;
         }

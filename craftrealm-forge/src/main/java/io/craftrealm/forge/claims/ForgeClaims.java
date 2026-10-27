@@ -20,6 +20,7 @@ public final class ForgeClaims {
     private final ForgeDatabase database;
     private final Logger logger;
     private final Map<Key, ForgeDatabase.Claim> claims = new ConcurrentHashMap<>();
+    private volatile boolean ready;
 
     public ForgeClaims(ForgeDatabase database, Logger logger) {
         this.database = database;
@@ -32,11 +33,16 @@ public final class ForgeClaims {
         for (ForgeDatabase.Claim claim : loaded) {
             claims.put(new Key(claim.dimension(), claim.chunkX(), claim.chunkZ()), claim);
         }
+        ready = true;
         logger.info("Loaded {} Forge land claims", claims.size());
     }
 
     public ForgeDatabase.Claim get(String dimension, int chunkX, int chunkZ) {
         return claims.get(new Key(dimension, chunkX, chunkZ));
+    }
+
+    public boolean isReady() {
+        return ready;
     }
 
     public void createAsync(ServerPlayer player, String dimension, int chunkX, int chunkZ,
@@ -80,11 +86,13 @@ public final class ForgeClaims {
     }
 
     public void close() {
+        ready = false;
         MinecraftForge.EVENT_BUS.unregister(this);
         claims.clear();
     }
 
     public boolean mayBuild(String dimension, BlockPos position, UUID player) {
+        if (!ready) return false;
         ForgeDatabase.Claim claim = get(dimension, position.getX() >> 4, position.getZ() >> 4);
         return claim == null || claim.owner().equals(player);
     }
@@ -95,7 +103,9 @@ public final class ForgeClaims {
         if (player.hasPermissions(2)) return;
         if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This chunk is protected by another player."));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(ready
+                    ? "This chunk is protected by another player."
+                    : "Claim protection is starting; building is temporarily disabled."));
         }
     }
 
@@ -105,7 +115,9 @@ public final class ForgeClaims {
         if (player.hasPermissions(2)) return;
         if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This chunk is protected by another player."));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(ready
+                    ? "This chunk is protected by another player."
+                    : "Claim protection is starting; building is temporarily disabled."));
         }
     }
 
