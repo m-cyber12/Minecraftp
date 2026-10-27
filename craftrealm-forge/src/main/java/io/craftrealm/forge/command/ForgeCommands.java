@@ -11,6 +11,7 @@ import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.cosmetics.ForgeCosmetics;
 import io.craftrealm.forge.discord.ForgeDiscordBridge;
 import io.craftrealm.forge.events.ForgeEventService;
+import io.craftrealm.forge.gui.ForgeMenuService;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.commands.CommandSourceStack;
@@ -39,7 +40,8 @@ public final class ForgeCommands {
     public static void register(RegisterCommandsEvent event, Supplier<ForgeDatabase> database,
                                 Supplier<ForgeClaims> claims, Supplier<ForgeMarket> market,
                                 Supplier<ForgeEventService> events, Supplier<ForgeCosmetics> cosmetics,
-                                Supplier<ForgeDiscordBridge> discord, Logger logger) {
+                                Supplier<ForgeDiscordBridge> discord, Supplier<ForgeMenuService> menus,
+                                Logger logger) {
         var dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> balance = Commands.literal("balance")
                 .executes(context -> balanceSelf(context.getSource(), database, logger))
@@ -156,6 +158,8 @@ public final class ForgeCommands {
                                                         DoubleArgumentType.getDouble(context, "multiplier"), events))))))
                 .then(Commands.literal("stop").requires(source -> source.hasPermission(2))
                         .executes(context -> stopEvent(context.getSource(), events))));
+        dispatcher.register(Commands.literal("crmenu")
+                .executes(context -> openMenu(context.getSource(), menus)));
         dispatcher.register(Commands.literal("discord")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("test")
@@ -163,7 +167,7 @@ public final class ForgeCommands {
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin, /discord"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin, /discord, /crmenu"), false);
                     return 1;
                 }));
     }
@@ -273,6 +277,18 @@ public final class ForgeCommands {
                                 }
                             }));
                 }));
+        return 1;
+    }
+
+    private static int openMenu(CommandSourceStack source, Supplier<ForgeMenuService> menusSupplier) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeMenuService menus = menusSupplier.get();
+        if (menus == null) {
+            source.sendFailure(Component.literal("CraftRealm menu is not available."));
+            return 0;
+        }
+        menus.open(player);
         return 1;
     }
 

@@ -7,6 +7,7 @@ import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.cosmetics.ForgeCosmetics;
 import io.craftrealm.forge.discord.ForgeDiscordBridge;
 import io.craftrealm.forge.events.ForgeEventService;
+import io.craftrealm.forge.gui.ForgeMenuService;
 import io.craftrealm.forge.jobs.ForgeJobListener;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
@@ -36,6 +37,7 @@ public final class CraftRealmForge {
     private volatile ForgeDatabase database;
     private volatile ForgeClaims claims;
     private final ForgeEventService events = new ForgeEventService();
+    private final ForgeMenuService menus = new ForgeMenuService();
     private volatile ForgeJobListener jobListener;
     private volatile ForgeMarket market;
     private volatile ForgeCosmetics cosmetics;
@@ -52,7 +54,7 @@ public final class CraftRealmForge {
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         ForgeCommands.register(event, () -> database, () -> claims, () -> market,
-                () -> events, () -> cosmetics, () -> discord, LOGGER);
+                () -> events, () -> cosmetics, () -> discord, () -> menus, LOGGER);
     }
 
     @SubscribeEvent

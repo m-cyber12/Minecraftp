@@ -28,7 +28,9 @@ fixed-length profession seasons and leaderboards from completed work actions. An
 optional token-protected, read-only HTTP dashboard exposes server status, market
 quotes, and top balances; it binds to loopback by default. An optional outbound
 Discord webhook posts profession level-up notices and can be checked with
-`/discord test`; configure only a Discord HTTPS webhook URL. Bank transfers are atomic; the bank
+`/discord test`; configure only a Discord HTTPS webhook URL. `/crmenu` opens a
+native server-synchronized chest hub for the wallet, bank, claims, jobs, quests,
+market, seasons, and cosmetics. Bank transfers are atomic; the bank
 applies configurable daily interest, supports term loans, and applies a one-time
 late penalty after a two-day grace period. Chunk claims persist and protect block
 break, placement and right-click interactions. The five job paths award
