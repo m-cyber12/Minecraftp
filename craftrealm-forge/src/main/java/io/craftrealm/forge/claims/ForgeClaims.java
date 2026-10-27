@@ -93,7 +93,7 @@ public final class ForgeClaims {
     public void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.getLevel().isClientSide() || !(event.getPlayer() instanceof ServerPlayer player)) return;
         if (player.hasPermissions(2)) return;
-        if (!mayBuild(event.getLevel().dimension().location().toString(), event.getPos(), player.getUUID())) {
+        if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This chunk is protected by another player."));
         }
@@ -103,7 +103,7 @@ public final class ForgeClaims {
     public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof ServerPlayer player)) return;
         if (player.hasPermissions(2)) return;
-        if (!mayBuild(event.getLevel().dimension().location().toString(), event.getPos(), player.getUUID())) {
+        if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This chunk is protected by another player."));
         }
@@ -113,7 +113,7 @@ public final class ForgeClaims {
     public void onInteract(PlayerInteractEvent.RightClickBlock event) {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof ServerPlayer player)) return;
         if (player.hasPermissions(2)) return;
-        if (!mayBuild(event.getLevel().dimension().location().toString(), event.getPos(), player.getUUID())) {
+        if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
         }
     }
