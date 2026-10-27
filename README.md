@@ -6,7 +6,7 @@ Forge 1.20.1 edition is now being ported in `craftrealm-forge`.**
 > **Forge status:** The Forge module now has native SQLite-backed balances, payments, leaderboards,
 > banking/loans, chunk claims/protection, five profession tracks, and a configurable
 > dynamic-price item market, audited operator wallet adjustments, persistent staff reports/notes, and temporary
-> timed profession reward events, daily profession quests, persistent particle-trail cosmetics, season leaderboards, an optional token-protected read-only dashboard, outbound Discord webhook notices, a native clickable feature-hub menu, and English/Persian in-game translations; additional port work continues. The Bukkit/Paper JAR will not
+> timed profession reward events, daily profession quests, persistent particle-trail cosmetics, season leaderboards, an optional token-protected read-only dashboard, outbound Discord webhook notices, a native clickable feature-hub menu, and English/Persian in-game translations, and a public asynchronous Forge economy API; additional port work continues. The Bukkit/Paper JAR will not
 > run on Forge. See [the Forge port plan](docs/FORGE-PORT.md) for scope and status.
 
 CraftRealm replaces the usual pile of economy plugins with one coherent system:

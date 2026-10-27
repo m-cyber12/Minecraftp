@@ -28,7 +28,8 @@ allow a single claim for a configurable reward. `/cosmetic` provides persistent,
 server-rendered particle trails with equip and clear commands. `/season` tracks
 fixed-length profession seasons and leaderboards from completed work actions. In-game
 messages use Minecraft translation keys with bundled `en_us` and `fa_ir` language
-files, so a server resource pack can override the text. An
+files, so a server resource pack can override the text. Other Forge mods can use
+the asynchronous economy API documented in [FORGE-API.md](FORGE-API.md). An
 optional token-protected, read-only HTTP dashboard exposes server status, market
 quotes, and top balances; it binds to loopback by default. An optional outbound
 Discord webhook posts profession level-up notices and can be checked with

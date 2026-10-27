@@ -5,6 +5,7 @@ import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.command.ForgeCommands;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.cosmetics.ForgeCosmetics;
+import io.craftrealm.forge.api.ForgeEconomyAPI;
 import io.craftrealm.forge.discord.ForgeDiscordBridge;
 import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.gui.ForgeMenuService;
@@ -43,6 +44,7 @@ public final class CraftRealmForge {
     private volatile ForgeCosmetics cosmetics;
     private volatile ForgeWebPanel webPanel;
     private volatile ForgeDiscordBridge discord;
+    private volatile ForgeEconomyAPI economyApi;
     private long lastMaintenanceAt;
 
     public CraftRealmForge() {
@@ -78,6 +80,8 @@ public final class CraftRealmForge {
             }
             jobListener = new ForgeJobListener(() -> database, events, () -> discord, LOGGER);
             market = new ForgeMarket(created, LOGGER);
+            economyApi = new ForgeEconomyAPI(() -> database, () -> market, event::getServer);
+            ForgeEconomyAPI.install(economyApi);
             cosmetics = new ForgeCosmetics(() -> database);
             cosmetics.load();
             if (ForgeConfig.WEB_ENABLED.get()) {
@@ -159,6 +163,9 @@ public final class CraftRealmForge {
         ForgeDiscordBridge currentDiscord = discord;
         discord = null;
         if (currentDiscord != null) currentDiscord.close();
+        ForgeEconomyAPI currentApi = economyApi;
+        economyApi = null;
+        if (currentApi != null) ForgeEconomyAPI.uninstall(currentApi);
         market = null;
         ForgeCosmetics currentCosmetics = cosmetics;
         cosmetics = null;
