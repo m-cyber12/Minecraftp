@@ -66,11 +66,15 @@ jobs:
           exit "$result"
 
       - name: Build Forge mod, legacy Paper jar and resource pack
-        run: >-
-          ./gradlew :craftrealm-forge:reobfJarJar
-          :craftrealm-plugin:shadowJar
-          :craftrealm-plugin:buildResourcePack
-          --stacktrace --console=plain
+        shell: bash
+        run: |
+          set +e
+          ./gradlew :craftrealm-forge:reobfJarJar :craftrealm-plugin:shadowJar :craftrealm-plugin:buildResourcePack --stacktrace --console=plain 2>&1 | tee package.log
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            python3 .github/scripts/report_build.py package.log
+          fi
+          exit "$result"
 
       - name: Upload Forge 1.20.1 mod
         uses: actions/upload-artifact@v4

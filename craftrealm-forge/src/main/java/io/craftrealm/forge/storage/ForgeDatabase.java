@@ -203,6 +203,13 @@ public final class ForgeDatabase implements AutoCloseable {
             insert.setLong(5, now);
             insert.executeUpdate();
         }
+        try (PreparedStatement rename = connection.prepareStatement(
+                "UPDATE cr_accounts SET name = ?, updated_at = ? WHERE uuid = ?")) {
+            rename.setString(1, name == null || name.isBlank() ? uuid.toString() : name);
+            rename.setLong(2, System.currentTimeMillis());
+            rename.setString(3, uuid.toString());
+            rename.executeUpdate();
+        }
     }
 
     private static long readBalance(Connection connection, UUID uuid) throws SQLException {
