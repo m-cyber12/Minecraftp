@@ -6,6 +6,7 @@ import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -26,6 +27,7 @@ public final class CraftRealmForge {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private volatile ForgeDatabase database;
+    private long lastMaintenanceAt;
 
     public CraftRealmForge() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ForgeConfig.SPEC);
@@ -45,6 +47,7 @@ public final class CraftRealmForge {
         try {
             created.open();
             database = created;
+            lastMaintenanceAt = System.currentTimeMillis() - 60_000L;
             LOGGER.info("CraftRealm Forge services started for '{}'", event.getServer().getWorldData().getLevelName());
         } catch (Exception failure) {
             created.close();
@@ -66,6 +69,33 @@ public final class CraftRealmForge {
                             }
                         });
             }
+        }
+    }
+
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.getServer().getTickCount() % 20 != 0) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - lastMaintenanceAt < 60_000L) {
+            return;
+        }
+        lastMaintenanceAt = now;
+        ForgeDatabase current = database;
+        if (current != null) {
+            current.processInterest(now, 86_400_000L, ForgeConfig.BANK_DAILY_INTEREST_PERCENT.get(),
+                            Math.round(ForgeConfig.MAX_BALANCE.get() * 100.0))
+                    .exceptionally(failure -> {
+                        LOGGER.error("Bank interest cycle failed", failure);
+                        return 0;
+                    });
+            current.processOverdueLoans(now - 2 * 86_400_000L,
+                            ForgeConfig.BANK_LOAN_PENALTY_PERCENT.get())
+                    .exceptionally(failure -> {
+                        LOGGER.error("Loan overdue cycle failed", failure);
+                        return 0;
+                    });
         }
     }
 

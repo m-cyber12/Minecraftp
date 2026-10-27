@@ -45,10 +45,30 @@ public final class ForgeCommands {
                                         DoubleArgumentType.getDouble(context, "amount"), database, logger)))));
         dispatcher.register(Commands.literal("baltop")
                 .executes(context -> baltop(context.getSource(), database, logger)));
+        dispatcher.register(Commands.literal("bank")
+                .executes(context -> bankBalance(context.getSource(), database, logger))
+                .then(Commands.literal("balance")
+                        .executes(context -> bankBalance(context.getSource(), database, logger)))
+                .then(Commands.literal("deposit")
+                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
+                                .executes(context -> bankMove(context.getSource(),
+                                        DoubleArgumentType.getDouble(context, "amount"), true, database, logger))))
+                .then(Commands.literal("withdraw")
+                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
+                                .executes(context -> bankMove(context.getSource(),
+                                        DoubleArgumentType.getDouble(context, "amount"), false, database, logger))))
+                .then(Commands.literal("loan")
+                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
+                                .executes(context -> takeLoan(context.getSource(),
+                                        DoubleArgumentType.getDouble(context, "amount"), database, logger))))
+                .then(Commands.literal("repay")
+                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
+                                .executes(context -> repayLoan(context.getSource(),
+                                        DoubleArgumentType.getDouble(context, "amount"), database, logger)))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank"), false);
                     return 1;
                 }));
     }
@@ -140,6 +160,146 @@ public final class ForgeCommands {
                     }
                 }));
         return 1;
+    }
+
+    private static int bankBalance(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = source.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null;
+        if (player == null) {
+            source.sendFailure(Component.literal("Only players have a bank account."));
+            return 0;
+        }
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        UUID uuid = player.getUUID();
+        String name = player.getGameProfile().getName();
+        store.bankBalance(uuid, name, startingCents()).whenComplete((account, error) -> source.getServer().execute(() -> {
+            if (error != null) {
+                reportFailure(source, error, logger);
+                return;
+            }
+            source.sendSuccess(() -> Component.literal("Wallet: " + format(account.walletCents())
+                    + "  Vault: " + format(account.bankCents())), false);
+        }));
+        return 1;
+    }
+
+    private static int bankMove(CommandSourceStack source, double rawAmount, boolean deposit,
+                                Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        long amount = parseCents(source, rawAmount);
+        if (amount <= 0) return 0;
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        UUID uuid = player.getUUID();
+        String name = player.getGameProfile().getName();
+        store.moveBank(uuid, name, amount, deposit, startingCents(), toCents(ForgeConfig.MAX_BALANCE.get()))
+                .whenComplete((result, error) -> source.getServer().execute(() -> {
+                    if (error != null) {
+                        reportFailure(source, error, logger);
+                        return;
+                    }
+                    if (!result.success()) {
+                        source.sendFailure(Component.literal(switch (result.failure()) {
+                            case "wallet-funds" -> "Insufficient wallet funds.";
+                            case "bank-funds" -> "Insufficient vault funds.";
+                            default -> "The configured balance limit would be exceeded.";
+                        }));
+                        return;
+                    }
+                    ForgeDatabase.BankSnapshot account = result.balances();
+                    source.sendSuccess(() -> Component.literal((deposit ? "Deposited " : "Withdrew ")
+                            + format(amount) + ". Wallet: " + format(account.walletCents())
+                            + "  Vault: " + format(account.bankCents())), false);
+                }));
+        return 1;
+    }
+
+    private static int takeLoan(CommandSourceStack source, double rawAmount,
+                                Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        long amount = parseCents(source, rawAmount);
+        if (amount <= 0) return 0;
+        long limit = toCents(ForgeConfig.BANK_MAX_LOAN.get());
+        if (amount > limit) {
+            source.sendFailure(Component.literal("Requested amount exceeds the configured loan limit of " + format(limit) + "."));
+            return 0;
+        }
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        long term = ForgeConfig.BANK_LOAN_TERM_DAYS.get() * 86_400_000L;
+        store.takeLoan(player.getUUID(), player.getGameProfile().getName(), amount, startingCents(),
+                        toCents(ForgeConfig.MAX_BALANCE.get()), term)
+                .whenComplete((result, error) -> source.getServer().execute(() -> {
+                    if (error != null) {
+                        reportFailure(source, error, logger);
+                    } else if (!result.success()) {
+                        source.sendFailure(Component.literal(result.failure().equals("loan-active")
+                                ? "Repay your current loan before taking another."
+                                : "The configured balance limit would be exceeded."));
+                    } else {
+                        source.sendSuccess(() -> Component.literal("Loan issued: " + format(amount)
+                                + ". Due " + java.time.Instant.ofEpochMilli(result.dueAt())
+                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate() + "."), false);
+                    }
+                }));
+        return 1;
+    }
+
+    private static int repayLoan(CommandSourceStack source, double rawAmount,
+                                 Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        long amount = parseCents(source, rawAmount);
+        if (amount <= 0) return 0;
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        store.repayLoan(player.getUUID(), player.getGameProfile().getName(), amount, startingCents())
+                .whenComplete((result, error) -> source.getServer().execute(() -> {
+                    if (error != null) {
+                        reportFailure(source, error, logger);
+                    } else if (!result.success()) {
+                        source.sendFailure(Component.literal(result.failure().equals("loan-none")
+                                ? "You have no outstanding loan."
+                                : "Insufficient wallet funds to repay that amount."));
+                    } else {
+                        source.sendSuccess(() -> Component.literal("Repayment accepted. Remaining principal: "
+                                + format(result.remainingCents()) + ". Wallet: " + format(result.walletCents())), false);
+                    }
+                }));
+        return 1;
+    }
+
+    private static ServerPlayer requirePlayer(CommandSourceStack source) {
+        if (source.getEntity() instanceof ServerPlayer player) return player;
+        source.sendFailure(Component.literal("This command is available to players only."));
+        return null;
+    }
+
+    private static long parseCents(CommandSourceStack source, double rawAmount) {
+        try {
+            long cents = BigDecimal.valueOf(rawAmount).setScale(2, RoundingMode.UNNECESSARY)
+                    .movePointRight(2).longValueExact();
+            if (cents > 0) return cents;
+        } catch (ArithmeticException ignored) {
+            source.sendFailure(Component.literal("Amounts must use at most two decimal places."));
+            return 0;
+        }
+        source.sendFailure(Component.literal("Amount must be positive."));
+        return 0;
     }
 
     private static int baltop(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
