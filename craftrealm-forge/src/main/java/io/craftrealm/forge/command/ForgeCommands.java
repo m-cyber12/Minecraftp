@@ -2,6 +2,8 @@ package io.craftrealm.forge.command;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
+import io.craftrealm.forge.api.ForgeTransactionType;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.commands.CommandSourceStack;
@@ -10,6 +12,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
@@ -118,8 +121,8 @@ public final class ForgeCommands {
         try {
             amountCents = BigDecimal.valueOf(rawAmount).setScale(2, RoundingMode.UNNECESSARY)
                     .movePointRight(2).longValueExact();
-        } catch (ArithmeticException invalidPrecision) {
-            source.sendFailure(Component.literal("Payments must use at most two decimal places."));
+        } catch (NumberFormatException | ArithmeticException invalidPrecision) {
+            source.sendFailure(Component.literal("Payments must be finite and use at most two decimal places."));
             return 0;
         }
         long maxTransaction = toCents(ForgeConfig.MAX_TRANSACTION.get());
@@ -137,27 +140,46 @@ public final class ForgeCommands {
         String payerName = payer.getGameProfile().getName();
         String recipientName = recipient.getGameProfile().getName();
         MinecraftServer server = source.getServer();
-        store.pay(payerId, payerName, recipientId, recipientName, amountCents, startingCents(),
-                        toCents(ForgeConfig.MAX_BALANCE.get()))
-                .whenComplete((result, error) -> server.execute(() -> {
-                    if (error != null) {
-                        reportFailure(source, error, logger);
+        store.balance(payerId, payerName, startingCents())
+                .thenCombine(store.balance(recipientId, recipientName, startingCents()),
+                        (payerBalance, recipientBalance) -> new long[]{payerBalance, recipientBalance})
+                .whenComplete((balances, readFailure) -> server.execute(() -> {
+                    if (readFailure != null) {
+                        reportFailure(source, readFailure, logger);
                         return;
                     }
-                    if (result.insufficientFunds()) {
-                        source.sendFailure(Component.literal("Insufficient funds."));
-                    } else if (result.recipientLimit()) {
-                        source.sendFailure(Component.literal("The recipient's balance is at its configured limit."));
-                    } else if (result.paid()) {
-                        String amount = format(amountCents);
-                        source.sendSuccess(() -> Component.literal("Paid " + amount + " to " + recipientName
-                                + ". Balance: " + format(result.payerBalanceCents())), false);
-                        ServerPlayer onlineRecipient = server.getPlayerList().getPlayer(recipientId);
-                        if (onlineRecipient != null) {
-                            onlineRecipient.sendSystemMessage(Component.literal("Received " + amount + " from "
-                                    + payerName + ". Balance: " + format(result.recipientBalanceCents())));
-                        }
+                    ForgeBalanceChangeEvent debit = new ForgeBalanceChangeEvent(payerId,
+                            balances[0], balances[0] - amountCents, ForgeTransactionType.PAY,
+                            "player payment", payerId);
+                    ForgeBalanceChangeEvent credit = new ForgeBalanceChangeEvent(recipientId,
+                            balances[1], balances[1] + amountCents, ForgeTransactionType.PAY,
+                            "player payment", payerId);
+                    if (MinecraftForge.EVENT_BUS.post(debit) || MinecraftForge.EVENT_BUS.post(credit)) {
+                        source.sendFailure(Component.literal("Another mod cancelled this balance change."));
+                        return;
                     }
+                    store.pay(payerId, payerName, recipientId, recipientName, amountCents, startingCents(),
+                                    toCents(ForgeConfig.MAX_BALANCE.get()))
+                            .whenComplete((result, error) -> server.execute(() -> {
+                                if (error != null) {
+                                    reportFailure(source, error, logger);
+                                    return;
+                                }
+                                if (result.insufficientFunds()) {
+                                    source.sendFailure(Component.literal("Insufficient funds."));
+                                } else if (result.recipientLimit()) {
+                                    source.sendFailure(Component.literal("The recipient's balance is at its configured limit."));
+                                } else if (result.paid()) {
+                                    String amount = format(amountCents);
+                                    source.sendSuccess(() -> Component.literal("Paid " + amount + " to " + recipientName
+                                            + ". Balance: " + format(result.payerBalanceCents())), false);
+                                    ServerPlayer onlineRecipient = server.getPlayerList().getPlayer(recipientId);
+                                    if (onlineRecipient != null) {
+                                        onlineRecipient.sendSystemMessage(Component.literal("Received " + amount + " from "
+                                                + payerName + ". Balance: " + format(result.recipientBalanceCents())));
+                                    }
+                                }
+                            }));
                 }));
         return 1;
     }
@@ -294,8 +316,8 @@ public final class ForgeCommands {
             long cents = BigDecimal.valueOf(rawAmount).setScale(2, RoundingMode.UNNECESSARY)
                     .movePointRight(2).longValueExact();
             if (cents > 0) return cents;
-        } catch (ArithmeticException ignored) {
-            source.sendFailure(Component.literal("Amounts must use at most two decimal places."));
+        } catch (NumberFormatException | ArithmeticException ignored) {
+            source.sendFailure(Component.literal("Amounts must be finite and use at most two decimal places."));
             return 0;
         }
         source.sendFailure(Component.literal("Amount must be positive."));

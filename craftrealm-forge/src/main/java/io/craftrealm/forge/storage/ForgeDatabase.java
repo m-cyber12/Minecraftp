@@ -118,19 +118,10 @@ public final class ForgeDatabase implements AutoCloseable {
     }
 
     public CompletableFuture<Long> balance(UUID player, String name, long initialBalanceCents) {
-        return supply(connection -> {
+        return supply(connection -> inTransaction(connection, () -> {
             ensureAccount(connection, player, name, initialBalanceCents);
-            try (PreparedStatement query = connection.prepareStatement(
-                    "SELECT balance_cents FROM cr_accounts WHERE uuid = ?")) {
-                query.setString(1, player.toString());
-                try (ResultSet rows = query.executeQuery()) {
-                    if (!rows.next()) {
-                        throw new SQLException("account vanished after insert: " + player);
-                    }
-                    return rows.getLong(1);
-                }
-            }
-        });
+            return readBalance(connection, player);
+        }));
     }
 
     public CompletableFuture<Payment> pay(UUID payer, String payerName, UUID recipient, String recipientName,
@@ -212,11 +203,11 @@ public final class ForgeDatabase implements AutoCloseable {
     }
 
     public CompletableFuture<BankSnapshot> bankBalance(UUID uuid, String name, long initialWalletCents) {
-        return supply(connection -> {
+        return supply(connection -> inTransaction(connection, () -> {
             ensureAccount(connection, uuid, name, initialWalletCents);
             ensureBankAccount(connection, uuid);
             return new BankSnapshot(readBalance(connection, uuid), readBankBalance(connection, uuid));
-        });
+        }));
     }
 
     public CompletableFuture<BankResult> moveBank(UUID uuid, String name, long amountCents, boolean deposit,
@@ -387,37 +378,41 @@ public final class ForgeDatabase implements AutoCloseable {
             boolean previousAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             int changed = 0;
+            try {
+                List<InterestRow> accounts = new ArrayList<>();
             try (PreparedStatement query = connection.prepareStatement(
                     "SELECT uuid,balance_cents,last_interest FROM cr_bank_accounts");
                  ResultSet rows = query.executeQuery()) {
                 while (rows.next()) {
-                    UUID uuid = UUID.fromString(rows.getString("uuid"));
-                    long balance = rows.getLong("balance_cents");
-                    long last = rows.getLong("last_interest");
-                    long periods = Math.max(0, (now - last) / periodMillis);
-                    if (periods == 0) {
-                        continue;
-                    }
-                    long interest = java.math.BigDecimal.valueOf(balance)
-                            .multiply(java.math.BigDecimal.valueOf(dailyPercent))
-                            .multiply(java.math.BigDecimal.valueOf(periods))
-                            .divide(java.math.BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP)
-                            .longValueExact();
-                    interest = Math.min(interest, Math.max(0, maxBankBalanceCents - balance));
-                    long nextInterest = last + periods * periodMillis;
-                    try (PreparedStatement update = connection.prepareStatement(
-                            "UPDATE cr_bank_accounts SET balance_cents=?,last_interest=? WHERE uuid=?")) {
-                        update.setLong(1, balance + interest);
-                        update.setLong(2, nextInterest);
-                        update.setString(3, uuid.toString());
-                        update.executeUpdate();
-                    }
-                    if (interest > 0) {
-                        insertTransaction(connection, "BANK_INTEREST", null, uuid, interest,
-                                "daily bank interest", null, now);
-                    }
-                    changed++;
+                    accounts.add(new InterestRow(UUID.fromString(rows.getString("uuid")),
+                            rows.getLong("balance_cents"), rows.getLong("last_interest")));
                 }
+            }
+            for (InterestRow account : accounts) {
+                long periods = Math.max(0, (now - account.lastInterest()) / periodMillis);
+                if (periods == 0) {
+                    continue;
+                }
+                long room = Math.max(0, maxBankBalanceCents - account.balanceCents());
+                java.math.BigDecimal calculated = java.math.BigDecimal.valueOf(account.balanceCents())
+                        .multiply(java.math.BigDecimal.valueOf(dailyPercent))
+                        .multiply(java.math.BigDecimal.valueOf(periods))
+                        .divide(java.math.BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP);
+                long interest = calculated.min(java.math.BigDecimal.valueOf(room)).longValueExact();
+                long nextInterest = account.lastInterest() + periods * periodMillis;
+                try (PreparedStatement update = connection.prepareStatement(
+                        "UPDATE cr_bank_accounts SET balance_cents=?,last_interest=? WHERE uuid=?")) {
+                    update.setLong(1, account.balanceCents() + interest);
+                    update.setLong(2, nextInterest);
+                    update.setString(3, account.uuid().toString());
+                    update.executeUpdate();
+                }
+                if (interest > 0) {
+                    insertTransaction(connection, "BANK_INTEREST", null, account.uuid(), interest,
+                            "daily bank interest", null, now);
+                }
+                changed++;
+            }
                 connection.commit();
                 return changed;
             } catch (SQLException | RuntimeException failure) {
@@ -435,30 +430,34 @@ public final class ForgeDatabase implements AutoCloseable {
             boolean previousAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             int count = 0;
-            try (PreparedStatement query = connection.prepareStatement(
-                    "SELECT id,uuid,outstanding_cents FROM cr_loans WHERE status='ACTIVE' AND due_at<?")) {
-                query.setLong(1, now);
-                try (ResultSet rows = query.executeQuery()) {
-                    while (rows.next()) {
-                        long id = rows.getLong("id");
-                        UUID uuid = UUID.fromString(rows.getString("uuid"));
-                        long outstanding = rows.getLong("outstanding_cents");
-                        long penalty = java.math.BigDecimal.valueOf(outstanding)
-                                .multiply(java.math.BigDecimal.valueOf(penaltyPercent))
-                                .divide(java.math.BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP)
-                                .longValueExact();
-                        try (PreparedStatement update = connection.prepareStatement(
-                                "UPDATE cr_loans SET outstanding_cents=?,status='DEFAULTED' WHERE id=? AND status='ACTIVE'")) {
-                            update.setLong(1, Math.addExact(outstanding, penalty));
-                            update.setLong(2, id);
-                            update.executeUpdate();
+            try {
+                List<LoanRow> overdue = new ArrayList<>();
+                try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT id,uuid,outstanding_cents FROM cr_loans WHERE status='ACTIVE' AND due_at<?")) {
+                    query.setLong(1, now);
+                    try (ResultSet rows = query.executeQuery()) {
+                        while (rows.next()) {
+                            overdue.add(new LoanRow(rows.getLong("id"),
+                                    UUID.fromString(rows.getString("uuid")), rows.getLong("outstanding_cents")));
                         }
-                        if (penalty > 0) {
-                            insertTransaction(connection, "LOAN_PENALTY", null, uuid, penalty,
-                                    "overdue loan penalty", null, now);
-                        }
-                        count++;
                     }
+                }
+                for (LoanRow loan : overdue) {
+                    long penalty = java.math.BigDecimal.valueOf(loan.outstandingCents())
+                            .multiply(java.math.BigDecimal.valueOf(penaltyPercent))
+                            .divide(java.math.BigDecimal.valueOf(100), 0, java.math.RoundingMode.HALF_UP)
+                            .longValueExact();
+                    try (PreparedStatement update = connection.prepareStatement(
+                            "UPDATE cr_loans SET outstanding_cents=?,status='DEFAULTED' WHERE id=? AND status='ACTIVE'")) {
+                        update.setLong(1, Math.addExact(loan.outstandingCents(), penalty));
+                        update.setLong(2, loan.id());
+                        if (update.executeUpdate() == 0) continue;
+                    }
+                    if (penalty > 0) {
+                        insertTransaction(connection, "LOAN_PENALTY", null, loan.uuid(), penalty,
+                                "overdue loan penalty", null, now);
+                    }
+                    count++;
                 }
                 connection.commit();
                 return count;
@@ -470,6 +469,9 @@ public final class ForgeDatabase implements AutoCloseable {
             }
         });
     }
+
+    private record InterestRow(UUID uuid, long balanceCents, long lastInterest) { }
+    private record LoanRow(long id, UUID uuid, long outstandingCents) { }
 
     private static void ensureBankAccount(Connection connection, UUID uuid) throws SQLException {
         try (PreparedStatement insert = connection.prepareStatement(
@@ -510,22 +512,43 @@ public final class ForgeDatabase implements AutoCloseable {
 
     private static void ensureAccount(Connection connection, UUID uuid, String name, long initialCents)
             throws SQLException {
+        long now = System.currentTimeMillis();
+        long openingCents = Math.max(0, initialCents);
+        int inserted;
         try (PreparedStatement insert = connection.prepareStatement(
                 "INSERT OR IGNORE INTO cr_accounts(uuid,name,balance_cents,created_at,updated_at) VALUES(?,?,?,?,?)")) {
-            long now = System.currentTimeMillis();
             insert.setString(1, uuid.toString());
             insert.setString(2, name == null || name.isBlank() ? uuid.toString() : name);
-            insert.setLong(3, Math.max(0, initialCents));
+            insert.setLong(3, openingCents);
             insert.setLong(4, now);
             insert.setLong(5, now);
-            insert.executeUpdate();
+            inserted = insert.executeUpdate();
+        }
+        if (inserted > 0 && openingCents > 0) {
+            insertTransaction(connection, "STARTING_BALANCE", null, uuid, openingCents,
+                    "account opening balance", null, now);
         }
         try (PreparedStatement rename = connection.prepareStatement(
                 "UPDATE cr_accounts SET name = ?, updated_at = ? WHERE uuid = ?")) {
             rename.setString(1, name == null || name.isBlank() ? uuid.toString() : name);
-            rename.setLong(2, System.currentTimeMillis());
+            rename.setLong(2, now);
             rename.setString(3, uuid.toString());
             rename.executeUpdate();
+        }
+    }
+
+    private static <T> T inTransaction(Connection connection, SqlWork<T> work) throws SQLException {
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            T result = work.apply(connection);
+            connection.commit();
+            return result;
+        } catch (SQLException | RuntimeException failure) {
+            connection.rollback();
+            throw failure;
+        } finally {
+            connection.setAutoCommit(previousAutoCommit);
         }
     }
 
