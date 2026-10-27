@@ -112,8 +112,10 @@ final class ForgeDatabaseTest {
             assertEquals(101L, sale.nextPriceCents());
             assertEquals(3L, database.marketQuote("minecraft:coal").join().tradedUnits());
 
-            assertEquals("wallet-funds", database.tradeMarket(trader, "Trader", "minecraft:coal",
-                    64, true, 10_000, 1_000_000).join().failure());
+            UUID poor = UUID.randomUUID();
+            database.balance(poor, "Poor", 0).join();
+            assertEquals("wallet-funds", database.tradeMarket(poor, "Poor", "minecraft:coal",
+                    1, true, 0, 1_000_000).join().failure());
         }
     }
 
