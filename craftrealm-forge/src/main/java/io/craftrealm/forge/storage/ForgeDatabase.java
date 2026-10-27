@@ -1041,7 +1041,7 @@ public final class ForgeDatabase implements AutoCloseable {
                     season.executeUpdate();
                 }
                 try (PreparedStatement quest = connection.prepareStatement(
-                        "INSERT INTO cr_daily_quests(uuid,day_key,progress,claimed) VALUES(?,?,1,0) "}
+                        "INSERT INTO cr_daily_quests(uuid,day_key,progress,claimed) VALUES(?,?,1,0) "
                                 + "ON CONFLICT(uuid) DO UPDATE SET "
                                 + "progress=CASE WHEN cr_daily_quests.day_key=excluded.day_key THEN cr_daily_quests.progress+1 ELSE 1 END, "
                                 + "claimed=CASE WHEN cr_daily_quests.day_key=excluded.day_key THEN cr_daily_quests.claimed ELSE 0 END, "
