@@ -118,6 +118,12 @@ public final class ForgeDatabase implements AutoCloseable {
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
             statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_cosmetics (
+                        uuid TEXT PRIMARY KEY NOT NULL,
+                        trail TEXT NOT NULL
+                    )
+                    """);
+            statement.execute("""
                     CREATE TABLE IF NOT EXISTS cr_daily_quests (
                         uuid TEXT PRIMARY KEY NOT NULL,
                         day_key BIGINT NOT NULL,
@@ -769,6 +775,48 @@ public final class ForgeDatabase implements AutoCloseable {
                 }
             }
         });
+    }
+
+    public CompletableFuture<String> cosmetic(UUID uuid) {
+        return supply(connection -> {
+            try (PreparedStatement query = connection.prepareStatement("SELECT trail FROM cr_cosmetics WHERE uuid=?")) {
+                query.setString(1, uuid.toString());
+                try (ResultSet rows = query.executeQuery()) {
+                    return rows.next() ? rows.getString(1) : null;
+                }
+            }
+        });
+    }
+
+    public CompletableFuture<java.util.Map<UUID, String>> loadCosmetics() {
+        return supply(connection -> {
+            java.util.Map<UUID, String> trails = new java.util.HashMap<>();
+            try (PreparedStatement query = connection.prepareStatement("SELECT uuid,trail FROM cr_cosmetics");
+                 ResultSet rows = query.executeQuery()) {
+                while (rows.next()) trails.put(UUID.fromString(rows.getString(1)), rows.getString(2));
+            }
+            return java.util.Map.copyOf(trails);
+        });
+    }
+
+    public CompletableFuture<Void> setCosmetic(UUID uuid, String trail) {
+        return supply(connection -> inTransaction(connection, ignored -> {
+            if (trail == null || trail.equals("NONE")) {
+                try (PreparedStatement delete = connection.prepareStatement("DELETE FROM cr_cosmetics WHERE uuid=?")) {
+                    delete.setString(1, uuid.toString());
+                    delete.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement upsert = connection.prepareStatement(
+                        "INSERT INTO cr_cosmetics(uuid,trail) VALUES(?,?) "
+                                + "ON CONFLICT(uuid) DO UPDATE SET trail=excluded.trail")) {
+                    upsert.setString(1, uuid.toString());
+                    upsert.setString(2, trail);
+                    upsert.executeUpdate();
+                }
+            }
+            return null;
+        }));
     }
 
     public CompletableFuture<QuestState> questState(UUID uuid, int actionsRequired) {

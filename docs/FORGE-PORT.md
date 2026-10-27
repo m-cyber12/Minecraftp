@@ -22,7 +22,8 @@ pressure and trades atomically against the wallet/ledger. Operator-only `/cradmi
 give` and `/cradmin take` adjustments are audited through the economy ledger.
 `/event start` schedules temporary server-wide profession reward multipliers and
 `/event stop` cancels them. Daily profession quests persist action progress and
-allow a single claim for a configurable reward. Bank transfers are atomic; the bank
+allow a single claim for a configurable reward. `/cosmetic` provides persistent,
+server-rendered particle trails with equip and clear commands. Bank transfers are atomic; the bank
 applies configurable daily interest, supports term loans, and applies a one-time
 late penalty after a two-day grace period. Chunk claims persist and protect block
 break, placement and right-click interactions. The five job paths award

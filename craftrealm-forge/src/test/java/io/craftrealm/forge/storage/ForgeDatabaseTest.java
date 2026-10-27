@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ForgeDatabaseTest {
@@ -136,6 +137,20 @@ final class ForgeDatabaseTest {
             database.balance(poor, "Poor", 0).join();
             assertEquals("wallet-funds", database.tradeMarket(poor, "Poor", "minecraft:coal",
                     1, true, 0, 1_000_000).join().failure());
+        }
+    }
+
+    @Test
+    void cosmeticTrailSelectionPersistsAndCanBeCleared() throws Exception {
+        UUID player = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("cosmetics.db"), 1,
+                LoggerFactory.getLogger("forge-cosmetics-test"))) {
+            database.open();
+            database.setCosmetic(player, "HEART").join();
+            assertEquals("HEART", database.cosmetic(player).join());
+            assertEquals("HEART", database.loadCosmetics().join().get(player));
+            database.setCosmetic(player, "NONE").join();
+            assertNull(database.cosmetic(player).join());
         }
     }
 

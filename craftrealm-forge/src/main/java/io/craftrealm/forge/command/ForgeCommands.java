@@ -8,6 +8,7 @@ import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
 import io.craftrealm.forge.api.ForgeTransactionType;
 import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.cosmetics.ForgeCosmetics;
 import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
@@ -36,7 +37,8 @@ public final class ForgeCommands {
 
     public static void register(RegisterCommandsEvent event, Supplier<ForgeDatabase> database,
                                 Supplier<ForgeClaims> claims, Supplier<ForgeMarket> market,
-                                Supplier<ForgeEventService> events, Logger logger) {
+                                Supplier<ForgeEventService> events, Supplier<ForgeCosmetics> cosmetics,
+                                Logger logger) {
         var dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> balance = Commands.literal("balance")
                 .executes(context -> balanceSelf(context.getSource(), database, logger))
@@ -80,6 +82,14 @@ public final class ForgeCommands {
                 .executes(context -> unclaim(context.getSource(), claims)));
         dispatcher.register(Commands.literal("claims")
                 .executes(context -> listClaims(context.getSource(), claims)));
+        dispatcher.register(Commands.literal("cosmetic")
+                .executes(context -> cosmeticStatus(context.getSource(), cosmetics))
+                .then(Commands.literal("equip")
+                        .then(Commands.argument("trail", StringArgumentType.word())
+                                .executes(context -> equipCosmetic(context.getSource(),
+                                        StringArgumentType.getString(context, "trail"), cosmetics, logger))))
+                .then(Commands.literal("clear")
+                        .executes(context -> equipCosmetic(context.getSource(), "NONE", cosmetics, logger))));
         dispatcher.register(Commands.literal("quests")
                 .executes(context -> questStatus(context.getSource(), database, logger))
                 .then(Commands.literal("claim")
@@ -144,7 +154,7 @@ public final class ForgeCommands {
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /event, /cradmin"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /cosmetic, /event, /cradmin"), false);
                     return 1;
                 }));
     }
@@ -520,6 +530,44 @@ public final class ForgeCommands {
             if (failure != null) reportFailure(source, failure, logger);
             else source.sendSuccess(() -> Component.literal("Your profession is now "
                     + job.substring(0, 1) + job.substring(1).toLowerCase(Locale.ROOT) + "."), false);
+        }));
+        return 1;
+    }
+
+    private static int cosmeticStatus(CommandSourceStack source, Supplier<ForgeCosmetics> cosmeticsSupplier) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeCosmetics cosmetics = cosmeticsSupplier.get();
+        if (cosmetics == null) {
+            source.sendFailure(Component.literal("Cosmetics service is starting."));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Equipped trail: " + cosmetics.equipped(player.getUUID())
+                + ". Available: " + String.join(", ", ForgeCosmetics.availableTrails())
+                + ". Use /cosmetic equip <trail> or /cosmetic clear."), false);
+        return 1;
+    }
+
+    private static int equipCosmetic(CommandSourceStack source, String trail,
+                                    Supplier<ForgeCosmetics> cosmeticsSupplier, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeCosmetics cosmetics = cosmeticsSupplier.get();
+        if (cosmetics == null) {
+            source.sendFailure(Component.literal("Cosmetics service is starting."));
+            return 0;
+        }
+        String normalized = trail.toUpperCase(Locale.ROOT);
+        if (!normalized.equals("NONE") && !ForgeCosmetics.availableTrails().contains(normalized)) {
+            source.sendFailure(Component.literal("Unknown trail. Choose: "
+                    + String.join(", ", ForgeCosmetics.availableTrails()) + "."));
+            return 0;
+        }
+        UUID playerId = player.getUUID();
+        cosmetics.equip(playerId, normalized).whenComplete((ignored, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else source.sendSuccess(() -> Component.literal(normalized.equals("NONE")
+                    ? "Cosmetic trail cleared." : "Equipped " + normalized.toLowerCase(Locale.ROOT) + " trail."), false);
         }));
         return 1;
     }

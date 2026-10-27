@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.command.ForgeCommands;
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.cosmetics.ForgeCosmetics;
 import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.jobs.ForgeJobListener;
 import io.craftrealm.forge.market.ForgeMarket;
@@ -35,6 +36,7 @@ public final class CraftRealmForge {
     private final ForgeEventService events = new ForgeEventService();
     private volatile ForgeJobListener jobListener;
     private volatile ForgeMarket market;
+    private volatile ForgeCosmetics cosmetics;
     private long lastMaintenanceAt;
 
     public CraftRealmForge() {
@@ -45,7 +47,8 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        ForgeCommands.register(event, () -> database, () -> claims, () -> market, () -> events, LOGGER);
+        ForgeCommands.register(event, () -> database, () -> claims, () -> market,
+                () -> events, () -> cosmetics, LOGGER);
     }
 
     @SubscribeEvent
@@ -66,6 +69,8 @@ public final class CraftRealmForge {
             }));
             jobListener = new ForgeJobListener(() -> database, events, LOGGER);
             market = new ForgeMarket(created, LOGGER);
+            cosmetics = new ForgeCosmetics(() -> database);
+            cosmetics.load();
             lastMaintenanceAt = System.currentTimeMillis() - 60_000L;
             LOGGER.info("CraftRealm Forge services started for '{}'", event.getServer().getWorldData().getLevelName());
         } catch (Exception failure) {
@@ -80,6 +85,8 @@ public final class CraftRealmForge {
             ForgeDatabase current = database;
             if (current != null) {
                 String playerName = player.getGameProfile().getName();
+                ForgeCosmetics currentCosmetics = cosmetics;
+                if (currentCosmetics != null) currentCosmetics.loadPlayer(player.getUUID());
                 current.balance(player.getUUID(), playerName,
                                 Math.round(ForgeConfig.STARTING_BALANCE.get() * 100.0))
                         .whenComplete((ignored, failure) -> {
@@ -98,6 +105,8 @@ public final class CraftRealmForge {
         }
         long now = System.currentTimeMillis();
         events.tick(event.getServer(), now);
+        ForgeCosmetics currentCosmetics = cosmetics;
+        if (currentCosmetics != null) currentCosmetics.tick(event.getServer());
         if (now - lastMaintenanceAt < 60_000L) {
             return;
         }
@@ -122,6 +131,9 @@ public final class CraftRealmForge {
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
         market = null;
+        ForgeCosmetics currentCosmetics = cosmetics;
+        cosmetics = null;
+        if (currentCosmetics != null) currentCosmetics.clear();
         ForgeClaims currentClaims = claims;
         claims = null;
         if (currentClaims != null) currentClaims.close();
