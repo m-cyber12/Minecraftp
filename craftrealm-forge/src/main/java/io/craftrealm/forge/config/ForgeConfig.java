@@ -35,6 +35,8 @@ public final class ForgeConfig {
     public static final ForgeConfigSpec.ConfigValue<String> WEB_HOST;
     public static final ForgeConfigSpec.IntValue WEB_PORT;
     public static final ForgeConfigSpec.ConfigValue<String> WEB_TOKEN;
+    public static final ForgeConfigSpec.BooleanValue DISCORD_ENABLED;
+    public static final ForgeConfigSpec.ConfigValue<String> DISCORD_WEBHOOK_URL;
     public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> MARKET_CATALOGUE;
     public static final ForgeConfigSpec SPEC;
 
@@ -82,6 +84,10 @@ public final class ForgeConfig {
         WEB_HOST = BUILDER.define("host", "127.0.0.1");
         WEB_PORT = BUILDER.defineInRange("port", 8765, 1024, 65535);
         WEB_TOKEN = BUILDER.define("token", "");
+        BUILDER.pop();
+        BUILDER.push("discord");
+        DISCORD_ENABLED = BUILDER.define("enabled", false);
+        DISCORD_WEBHOOK_URL = BUILDER.define("webhook-url", "");
         BUILDER.pop();
         BUILDER.push("market");
         MARKET_CATALOGUE = BUILDER.comment("Allowed items and base prices in format namespace:item=price.")

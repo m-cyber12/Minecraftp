@@ -9,6 +9,7 @@ import io.craftrealm.forge.api.ForgeTransactionType;
 import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.cosmetics.ForgeCosmetics;
+import io.craftrealm.forge.discord.ForgeDiscordBridge;
 import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
@@ -38,7 +39,7 @@ public final class ForgeCommands {
     public static void register(RegisterCommandsEvent event, Supplier<ForgeDatabase> database,
                                 Supplier<ForgeClaims> claims, Supplier<ForgeMarket> market,
                                 Supplier<ForgeEventService> events, Supplier<ForgeCosmetics> cosmetics,
-                                Logger logger) {
+                                Supplier<ForgeDiscordBridge> discord, Logger logger) {
         var dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> balance = Commands.literal("balance")
                 .executes(context -> balanceSelf(context.getSource(), database, logger))
@@ -155,10 +156,14 @@ public final class ForgeCommands {
                                                         DoubleArgumentType.getDouble(context, "multiplier"), events))))))
                 .then(Commands.literal("stop").requires(source -> source.hasPermission(2))
                         .executes(context -> stopEvent(context.getSource(), events))));
+        dispatcher.register(Commands.literal("discord")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("test")
+                        .executes(context -> testDiscord(context.getSource(), discord))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin, /discord"), false);
                     return 1;
                 }));
     }
@@ -268,6 +273,17 @@ public final class ForgeCommands {
                                 }
                             }));
                 }));
+        return 1;
+    }
+
+    private static int testDiscord(CommandSourceStack source, Supplier<ForgeDiscordBridge> discordSupplier) {
+        ForgeDiscordBridge bridge = discordSupplier.get();
+        if (bridge == null || !bridge.configured()) {
+            source.sendFailure(Component.literal("Discord webhook is not configured."));
+            return 0;
+        }
+        bridge.send("CraftRealm Forge webhook test received.");
+        source.sendSuccess(() -> Component.literal("Discord test notification queued."), true);
         return 1;
     }
 

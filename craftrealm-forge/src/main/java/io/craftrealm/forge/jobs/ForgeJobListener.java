@@ -1,6 +1,7 @@
 package io.craftrealm.forge.jobs;
 
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.discord.ForgeDiscordBridge;
 import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.server.MinecraftServer;
@@ -27,12 +28,15 @@ public final class ForgeJobListener {
 
     private final Supplier<ForgeDatabase> database;
     private final ForgeEventService events;
+    private final Supplier<ForgeDiscordBridge> discord;
     private final Logger logger;
     private final Map<String, Long> playerPlacedBlocks = new ConcurrentHashMap<>();
 
-    public ForgeJobListener(Supplier<ForgeDatabase> database, ForgeEventService events, Logger logger) {
+    public ForgeJobListener(Supplier<ForgeDatabase> database, ForgeEventService events,
+                            Supplier<ForgeDiscordBridge> discord, Logger logger) {
         this.database = database;
         this.events = events;
+        this.discord = discord;
         this.logger = logger;
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -116,6 +120,9 @@ public final class ForgeJobListener {
                         if (award.levelUp()) {
                             online.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                                     "Your " + job.toLowerCase() + " job reached level " + award.level() + "!"));
+                            ForgeDiscordBridge bridge = discord.get();
+                            if (bridge != null) bridge.send(name + " reached " + job.toLowerCase()
+                                    + " profession level " + award.level() + ".");
                         }
                     });
                 });

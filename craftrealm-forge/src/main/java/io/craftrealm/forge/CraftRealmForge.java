@@ -5,6 +5,7 @@ import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.command.ForgeCommands;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.cosmetics.ForgeCosmetics;
+import io.craftrealm.forge.discord.ForgeDiscordBridge;
 import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.jobs.ForgeJobListener;
 import io.craftrealm.forge.market.ForgeMarket;
@@ -39,6 +40,7 @@ public final class CraftRealmForge {
     private volatile ForgeMarket market;
     private volatile ForgeCosmetics cosmetics;
     private volatile ForgeWebPanel webPanel;
+    private volatile ForgeDiscordBridge discord;
     private long lastMaintenanceAt;
 
     public CraftRealmForge() {
@@ -50,7 +52,7 @@ public final class CraftRealmForge {
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         ForgeCommands.register(event, () -> database, () -> claims, () -> market,
-                () -> events, () -> cosmetics, LOGGER);
+                () -> events, () -> cosmetics, () -> discord, LOGGER);
     }
 
     @SubscribeEvent
@@ -69,7 +71,10 @@ public final class CraftRealmForge {
                     loadedClaims.load(loaded);
                 }
             }));
-            jobListener = new ForgeJobListener(() -> database, events, LOGGER);
+            if (ForgeConfig.DISCORD_ENABLED.get()) {
+                discord = new ForgeDiscordBridge(true, ForgeConfig.DISCORD_WEBHOOK_URL.get(), LOGGER);
+            }
+            jobListener = new ForgeJobListener(() -> database, events, () -> discord, LOGGER);
             market = new ForgeMarket(created, LOGGER);
             cosmetics = new ForgeCosmetics(() -> database);
             cosmetics.load();
@@ -149,6 +154,9 @@ public final class CraftRealmForge {
         ForgeWebPanel currentWeb = webPanel;
         webPanel = null;
         if (currentWeb != null) currentWeb.close();
+        ForgeDiscordBridge currentDiscord = discord;
+        discord = null;
+        if (currentDiscord != null) currentDiscord.close();
         market = null;
         ForgeCosmetics currentCosmetics = cosmetics;
         cosmetics = null;
