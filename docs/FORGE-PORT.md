@@ -13,11 +13,13 @@ modules. The existing Paper modules remain intact while the Forge adapter is
 ported, so their API types are not accidentally bundled into or loaded by the
 Forge mod.
 
-The Forge implementation now has a SQLite/Hikari storage layer, account creation
-on player login, a durable cents-based transaction ledger, and native Brigadier
-commands for `/balance` (`/bal`), `/pay`, and `/baltop`. Payments are applied in a
-single SQL transaction and return to the server thread before sending feedback.
-These are the first ported features; the rest of the Paper feature set remains
+The Forge implementation now has a self-contained SQLite/Hikari storage layer,
+account creation on player login, a durable cents-based transaction ledger, and
+native Brigadier commands for `/balance` (`/bal`), `/pay`, `/baltop` and `/bank`.
+Bank transfers are atomic; the bank applies configurable daily interest, supports
+term loans, and applies a one-time late penalty after a two-day grace period.
+Player feedback returns to the server thread after asynchronous SQL work. These
+are the first ported features; the rest of the Paper feature set remains
 unported.
 
 ## Build

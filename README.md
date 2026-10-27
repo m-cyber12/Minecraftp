@@ -3,8 +3,8 @@
 **CraftRealm's full feature set currently runs as a Paper 1.21.4 plugin. A native
 Forge 1.20.1 edition is now being ported in `craftrealm-forge`.**
 
-> **Forge status:** The Forge module now has native SQLite-backed balances, `/balance`, `/pay`, and
-> `/baltop`, but it is not feature-complete yet. The Bukkit/Paper JAR will not
+> **Forge status:** The Forge module now has native SQLite-backed balances, payments, leaderboards,
+> bank transfers, daily interest, and loans, but it is not feature-complete yet. The Bukkit/Paper JAR will not
 > run on Forge. See [the Forge port plan](docs/FORGE-PORT.md) for scope and status.
 
 CraftRealm replaces the usual pile of economy plugins with one coherent system:
