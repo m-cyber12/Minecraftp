@@ -3,8 +3,8 @@
 **CraftRealm's full feature set currently runs as a Paper 1.21.4 plugin. A native
 Forge 1.20.1 edition is now being ported in `craftrealm-forge`.**
 
-> **Forge status:** The Forge module currently provides the native mod bootstrap
-> and build target; it is not feature-complete yet. The Bukkit/Paper JAR will not
+> **Forge status:** The Forge module now has native SQLite-backed balances, `/balance`, `/pay`, and
+> `/baltop`, but it is not feature-complete yet. The Bukkit/Paper JAR will not
 > run on Forge. See [the Forge port plan](docs/FORGE-PORT.md) for scope and status.
 
 CraftRealm replaces the usual pile of economy plugins with one coherent system:
@@ -144,7 +144,7 @@ cd CraftRealm
 Artifacts land at:
 
 ```
-craftrealm-forge/build/libs/CraftRealm-Forge-1.0.0.jar  # Forge mod bootstrap; port in progress
+craftrealm-forge/build/libs/CraftRealm-Forge-1.0.0-all.jar  # Forge mod; port in progress
 craftrealm-plugin/build/libs/CraftRealm-1.0.0.jar       # full legacy Paper implementation
 ```
 
