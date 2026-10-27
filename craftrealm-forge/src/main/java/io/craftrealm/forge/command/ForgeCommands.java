@@ -1,12 +1,14 @@
 package io.craftrealm.forge.command;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
 import io.craftrealm.forge.api.ForgeTransactionType;
 import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -32,7 +34,7 @@ public final class ForgeCommands {
     }
 
     public static void register(RegisterCommandsEvent event, Supplier<ForgeDatabase> database,
-                                Supplier<ForgeClaims> claims, Logger logger) {
+                                Supplier<ForgeClaims> claims, Supplier<ForgeMarket> market, Logger logger) {
         var dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> balance = Commands.literal("balance")
                 .executes(context -> balanceSelf(context.getSource(), database, logger))
@@ -82,10 +84,31 @@ public final class ForgeCommands {
                         .then(Commands.argument("job", StringArgumentType.word())
                                 .executes(context -> chooseJob(context.getSource(),
                                         StringArgumentType.getString(context, "job"), database, logger)))));
+        dispatcher.register(Commands.literal("market")
+                .executes(context -> marketList(context.getSource(), market, logger))
+                .then(Commands.literal("quote")
+                        .then(Commands.argument("item", StringArgumentType.word())
+                                .executes(context -> marketQuote(context.getSource(),
+                                        StringArgumentType.getString(context, "item"), market, logger)))));
+        dispatcher.register(Commands.literal("shop")
+                .then(Commands.literal("buy")
+                        .then(Commands.argument("item", StringArgumentType.word())
+                                .then(Commands.argument("quantity", IntegerArgumentType.integer(1, 64))
+                                        .executes(context -> buyItem(context.getSource(),
+                                                StringArgumentType.getString(context, "item"),
+                                                IntegerArgumentType.getInteger(context, "quantity"),
+                                                market, logger))))));
+        dispatcher.register(Commands.literal("sell")
+                .then(Commands.argument("item", StringArgumentType.word())
+                        .then(Commands.argument("quantity", IntegerArgumentType.integer(1, 64))
+                                .executes(context -> sellItem(context.getSource(),
+                                        StringArgumentType.getString(context, "item"),
+                                        IntegerArgumentType.getInteger(context, "quantity"),
+                                        market, logger)))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs"), false);
                     return 1;
                 }));
     }
@@ -196,6 +219,161 @@ public final class ForgeCommands {
                             }));
                 }));
         return 1;
+    }
+
+    private static int marketList(CommandSourceStack source, Supplier<ForgeMarket> marketSupplier, Logger logger) {
+        ForgeMarket market = marketSupplier.get();
+        if (market == null) {
+            source.sendFailure(Component.literal("Market is still starting."));
+            return 0;
+        }
+        market.quotes().whenComplete((quotes, failure) -> source.getServer().execute(() -> {
+            if (failure != null) {
+                reportFailure(source, failure, logger);
+                return;
+            }
+            source.sendSuccess(() -> Component.literal("CraftRealm market · use /shop buy <item> <quantity> or /sell <item> <quantity>"), false);
+            for (ForgeDatabase.MarketQuote quote : quotes) {
+                source.sendSuccess(() -> Component.literal(quote.itemId() + "  " + format(quote.priceCents())
+                        + " each  ·  traded " + quote.tradedUnits()), false);
+            }
+        }));
+        return 1;
+    }
+
+    private static int marketQuote(CommandSourceStack source, String input,
+                                   Supplier<ForgeMarket> marketSupplier, Logger logger) {
+        ForgeMarket market = marketSupplier.get();
+        String id = market == null ? null : market.itemId(input);
+        if (id == null) {
+            source.sendFailure(Component.literal("That item is not available in the configured market."));
+            return 0;
+        }
+        market.quote(id).whenComplete((quote, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else if (quote == null) source.sendFailure(Component.literal("No market quote exists for that item."));
+            else source.sendSuccess(() -> Component.literal(id + " costs " + format(quote.priceCents())
+                    + " per item; base price " + format(quote.basePriceCents()) + "."), false);
+        }));
+        return 1;
+    }
+
+    private static int buyItem(CommandSourceStack source, String input, int quantity,
+                               Supplier<ForgeMarket> marketSupplier, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeMarket market = marketSupplier.get();
+        String id = market == null ? null : market.itemId(input);
+        if (id == null) {
+            source.sendFailure(Component.literal("That item is not available in the configured market."));
+            return 0;
+        }
+        net.minecraft.world.item.Item item = market.item(id);
+        UUID playerId = player.getUUID();
+        String playerName = player.getGameProfile().getName();
+        MinecraftServer server = source.getServer();
+        market.trade(playerId, playerName, id, quantity, true, startingCents(),
+                        toCents(ForgeConfig.MAX_BALANCE.get()))
+                .whenComplete((trade, failure) -> server.execute(() -> {
+                    if (failure != null) {
+                        reportFailure(source, failure, logger);
+                        return;
+                    }
+                    if (!trade.success()) {
+                        source.sendFailure(Component.literal(trade.failure().equals("wallet-funds")
+                                ? "Insufficient funds for this purchase." : "The market could not complete this purchase."));
+                        return;
+                    }
+                    ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+                    if (online == null) {
+                        market.refund(playerId, trade.totalCents(), id, quantity).whenComplete((ignored, refundFailure) -> {
+                            if (refundFailure != null) logger.error("Could not refund an undelivered shop purchase for {}", playerName, refundFailure);
+                        });
+                        return;
+                    }
+                    net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(item, quantity);
+                    net.minecraft.world.item.ItemStack remainder = online.getInventory().add(stack);
+                    if (!remainder.isEmpty()) online.drop(remainder, false);
+                    online.sendSystemMessage(Component.literal("Bought " + quantity + " " + id + " for "
+                            + format(trade.totalCents()) + ". Wallet: " + format(trade.walletCents())));
+                }));
+        return 1;
+    }
+
+    private static int sellItem(CommandSourceStack source, String input, int quantity,
+                                Supplier<ForgeMarket> marketSupplier, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeMarket market = marketSupplier.get();
+        String id = market == null ? null : market.itemId(input);
+        net.minecraft.world.item.Item item = id == null || market == null ? null : market.item(id);
+        if (id == null || item == null) {
+            source.sendFailure(Component.literal("That item is not available in the configured market."));
+            return 0;
+        }
+        java.util.List<net.minecraft.world.item.ItemStack> removed = takeItems(player, item, quantity);
+        if (removed == null) {
+            source.sendFailure(Component.literal("You do not have enough of that item."));
+            return 0;
+        }
+        UUID playerId = player.getUUID();
+        String playerName = player.getGameProfile().getName();
+        MinecraftServer server = source.getServer();
+        net.minecraft.server.level.ServerLevel level = player.serverLevel();
+        net.minecraft.world.phys.Vec3 position = player.position();
+        market.trade(playerId, playerName, id, quantity, false, startingCents(),
+                        toCents(ForgeConfig.MAX_BALANCE.get()))
+                .whenComplete((trade, failure) -> server.execute(() -> {
+                    ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+                    if (failure != null || trade == null || !trade.success()) {
+                        restoreItems(online, level, position, removed);
+                        if (failure != null) reportFailure(source, failure, logger);
+                        else source.sendFailure(Component.literal(trade != null && trade.failure().equals("wallet-limit")
+                                ? "Selling would exceed your wallet limit; your items were returned."
+                                : "The market could not complete this sale; your items were returned."));
+                        return;
+                    }
+                    if (online != null) online.sendSystemMessage(Component.literal("Sold " + quantity + " " + id
+                            + " for " + format(trade.totalCents()) + ". Wallet: " + format(trade.walletCents())));
+                }));
+        return 1;
+    }
+
+    private static java.util.List<net.minecraft.world.item.ItemStack> takeItems(ServerPlayer player,
+                                                                                net.minecraft.world.item.Item item,
+                                                                                int quantity) {
+        int count = 0;
+        for (int slot = 0; slot < 36; slot++) {
+            net.minecraft.world.item.ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.is(item)) count += stack.getCount();
+        }
+        if (count < quantity) return null;
+        java.util.List<net.minecraft.world.item.ItemStack> removed = new java.util.ArrayList<>();
+        int remaining = quantity;
+        for (int slot = 0; slot < 36 && remaining > 0; slot++) {
+            net.minecraft.world.item.ItemStack stack = player.getInventory().getItem(slot);
+            if (!stack.is(item)) continue;
+            int amount = Math.min(remaining, stack.getCount());
+            removed.add(stack.split(amount));
+            remaining -= amount;
+            if (stack.isEmpty()) player.getInventory().setItem(slot, net.minecraft.world.item.ItemStack.EMPTY);
+        }
+        return removed;
+    }
+
+    private static void restoreItems(ServerPlayer online, net.minecraft.server.level.ServerLevel level,
+                                     net.minecraft.world.phys.Vec3 position,
+                                     java.util.List<net.minecraft.world.item.ItemStack> stacks) {
+        for (net.minecraft.world.item.ItemStack stack : stacks) {
+            if (online != null) {
+                net.minecraft.world.item.ItemStack remainder = online.getInventory().add(stack);
+                if (!remainder.isEmpty()) online.drop(remainder, false);
+            } else if (!stack.isEmpty()) {
+                net.minecraft.world.entity.item.ItemEntity dropped = new net.minecraft.world.entity.item.ItemEntity(
+                        level, position.x, position.y, position.z, stack);
+                level.addFreshEntity(dropped);
+            }
+        }
     }
 
     private static int chooseJob(CommandSourceStack source, String rawJob,

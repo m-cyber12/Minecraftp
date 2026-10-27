@@ -15,6 +15,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -115,6 +117,14 @@ public final class ForgeDatabase implements AutoCloseable {
                     )
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_market (
+                        item_id TEXT PRIMARY KEY NOT NULL,
+                        base_price_cents INTEGER NOT NULL CHECK(base_price_cents > 0),
+                        price_cents INTEGER NOT NULL CHECK(price_cents > 0),
+                        traded_units INTEGER NOT NULL DEFAULT 0
+                    )
+                    """);
             statement.execute("""
                     CREATE TABLE IF NOT EXISTS cr_player_job (
                         uuid TEXT PRIMARY KEY NOT NULL,
@@ -542,6 +552,131 @@ public final class ForgeDatabase implements AutoCloseable {
         }
     }
 
+    /** Inserts configured market items without overwriting prices already changed by players. */
+    public CompletableFuture<Void> seedMarket(Map<String, Long> catalogue) {
+        return supply(connection -> inTransaction(connection, ignored -> {
+            try (PreparedStatement insert = connection.prepareStatement(
+                    "INSERT OR IGNORE INTO cr_market(item_id,base_price_cents,price_cents,traded_units) VALUES(?,?,?,0)")) {
+                for (Map.Entry<String, Long> item : catalogue.entrySet()) {
+                    if (item.getValue() <= 0) continue;
+                    insert.setString(1, item.getKey());
+                    insert.setLong(2, item.getValue());
+                    insert.setLong(3, item.getValue());
+                    insert.addBatch();
+                }
+                insert.executeBatch();
+            }
+            return null;
+        }));
+    }
+
+    public CompletableFuture<List<MarketQuote>> marketQuotes() {
+        return supply(connection -> {
+            List<MarketQuote> quotes = new ArrayList<>();
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT item_id,base_price_cents,price_cents,traded_units FROM cr_market ORDER BY item_id");
+                 ResultSet rows = query.executeQuery()) {
+                while (rows.next()) quotes.add(new MarketQuote(rows.getString(1), rows.getLong(2),
+                        rows.getLong(3), rows.getLong(4)));
+            }
+            return List.copyOf(quotes);
+        });
+    }
+
+    public CompletableFuture<MarketQuote> marketQuote(String itemId) {
+        return supply(connection -> {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT item_id,base_price_cents,price_cents,traded_units FROM cr_market WHERE item_id=?")) {
+                query.setString(1, itemId);
+                try (ResultSet rows = query.executeQuery()) {
+                    return rows.next() ? new MarketQuote(rows.getString(1), rows.getLong(2),
+                            rows.getLong(3), rows.getLong(4)) : null;
+                }
+            }
+        });
+    }
+
+    /** Atomic wallet and dynamic-price update. Inventory delivery/removal must be done by the Forge adapter. */
+    public CompletableFuture<MarketTrade> tradeMarket(UUID uuid, String playerName, String itemId, int quantity,
+                                                       boolean buy, long initialBalanceCents,
+                                                       long maxBalanceCents) {
+        if (quantity < 1 || quantity > 64) return CompletableFuture.completedFuture(MarketTrade.failed("quantity"));
+        return supply(connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                ensureAccount(connection, uuid, playerName, initialBalanceCents);
+                long basePrice;
+                long unitPrice;
+                try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT base_price_cents,price_cents FROM cr_market WHERE item_id=?")) {
+                    query.setString(1, itemId);
+                    try (ResultSet rows = query.executeQuery()) {
+                        if (!rows.next()) {
+                            connection.rollback();
+                            return MarketTrade.failed("unknown-item");
+                        }
+                        basePrice = rows.getLong(1);
+                        unitPrice = rows.getLong(2);
+                    }
+                }
+                long total = Math.multiplyExact(unitPrice, quantity);
+                long now = System.currentTimeMillis();
+                String updateSql = buy
+                        ? "UPDATE cr_accounts SET balance_cents=balance_cents-?,updated_at=? WHERE uuid=? AND balance_cents>=?"
+                        : "UPDATE cr_accounts SET balance_cents=balance_cents+?,updated_at=? WHERE uuid=? AND balance_cents<=?";
+                try (PreparedStatement update = connection.prepareStatement(updateSql)) {
+                    update.setLong(1, total);
+                    update.setLong(2, now);
+                    update.setString(3, uuid.toString());
+                    update.setLong(4, buy ? total : maxBalanceCents - total);
+                    if (update.executeUpdate() == 0) {
+                        connection.rollback();
+                        return MarketTrade.failed(buy ? "wallet-funds" : "wallet-limit");
+                    }
+                }
+                long pressure = Math.multiplyExact(Math.max(1L, basePrice / 100L), quantity);
+                long nextPrice = buy ? Math.min(Math.multiplyExact(basePrice, 5L), Math.addExact(unitPrice, pressure))
+                        : Math.max(Math.max(1L, basePrice / 5L), unitPrice - Math.min(unitPrice - 1L, pressure));
+                try (PreparedStatement update = connection.prepareStatement(
+                        "UPDATE cr_market SET price_cents=?,traded_units=traded_units+? WHERE item_id=?")) {
+                    update.setLong(1, nextPrice);
+                    update.setLong(2, quantity);
+                    update.setString(3, itemId);
+                    update.executeUpdate();
+                }
+                insertTransaction(connection, buy ? "SHOP_BUY" : "SHOP_SELL", buy ? uuid : null,
+                        buy ? null : uuid, total, (buy ? "bought " : "sold ") + quantity + " " + itemId, uuid, now);
+                long wallet = readBalance(connection, uuid);
+                connection.commit();
+                return MarketTrade.success(itemId, quantity, unitPrice, total, wallet, nextPrice);
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
+    /** Refunds a charged but undelivered shop order and records the compensating ledger entry. */
+    public CompletableFuture<Void> refundMarketPurchase(UUID uuid, long amountCents, String itemId, int quantity) {
+        if (amountCents <= 0) return CompletableFuture.completedFuture(null);
+        return supply(connection -> inTransaction(connection, ignored -> {
+            long now = System.currentTimeMillis();
+            try (PreparedStatement credit = connection.prepareStatement(
+                    "UPDATE cr_accounts SET balance_cents=balance_cents+?,updated_at=? WHERE uuid=?")) {
+                credit.setLong(1, amountCents);
+                credit.setLong(2, now);
+                credit.setString(3, uuid.toString());
+                if (credit.executeUpdate() == 0) throw new SQLException("cannot refund shop order without account " + uuid);
+            }
+            insertTransaction(connection, "SHOP_REFUND", null, uuid, amountCents,
+                    "undelivered " + quantity + " " + itemId, null, now);
+            return null;
+        }));
+    }
+
     public CompletableFuture<Boolean> chooseJob(UUID uuid, String job) {
         return supply(connection -> inTransaction(connection, ignored -> {
             long today = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
@@ -913,6 +1048,19 @@ public final class ForgeDatabase implements AutoCloseable {
 
         static Payment recipientAtLimit() {
             return new Payment(false, false, true, 0, 0);
+        }
+    }
+
+    public record MarketQuote(String itemId, long basePriceCents, long priceCents, long tradedUnits) { }
+
+    public record MarketTrade(boolean success, String failure, String itemId, int quantity,
+                              long unitPriceCents, long totalCents, long walletCents, long nextPriceCents) {
+        public static MarketTrade failed(String reason) {
+            return new MarketTrade(false, reason, null, 0, 0, 0, 0, 0);
+        }
+        public static MarketTrade success(String itemId, int quantity, long unitPrice, long total,
+                                          long wallet, long nextPrice) {
+            return new MarketTrade(true, null, itemId, quantity, unitPrice, total, wallet, nextPrice);
         }
     }
 

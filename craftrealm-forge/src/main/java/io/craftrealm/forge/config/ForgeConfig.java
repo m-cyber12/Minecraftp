@@ -28,6 +28,7 @@ public final class ForgeConfig {
     public static final ForgeConfigSpec.DoubleValue JOB_LEVEL_MULTIPLIER;
     public static final ForgeConfigSpec.IntValue JOB_XP_PER_ACTION;
     public static final ForgeConfigSpec.IntValue JOB_MAX_LEVEL;
+    public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> MARKET_CATALOGUE;
     public static final ForgeConfigSpec SPEC;
 
     static {
@@ -61,6 +62,14 @@ public final class ForgeConfig {
         JOB_LEVEL_MULTIPLIER = BUILDER.defineInRange("multiplier-per-level", 0.05, 0.0, 1.0);
         JOB_XP_PER_ACTION = BUILDER.defineInRange("xp-per-action", 4, 1, 100_000);
         JOB_MAX_LEVEL = BUILDER.defineInRange("max-level", 50, 1, 1000);
+        BUILDER.pop();
+        BUILDER.push("market");
+        MARKET_CATALOGUE = BUILDER.comment("Allowed items and base prices in format namespace:item=price.")
+                .defineListAllowEmpty("catalogue", java.util.List.of(
+                        "minecraft:coal=1.00", "minecraft:iron_ingot=4.00", "minecraft:gold_ingot=8.00",
+                        "minecraft:diamond=40.00", "minecraft:emerald=25.00", "minecraft:wheat=0.50",
+                        "minecraft:carrot=0.40", "minecraft:raw_cod=1.00", "minecraft:rotten_flesh=0.15"),
+                        value -> value instanceof String text && text.matches("[a-z0-9_.-]+:[a-z0-9_./-]+=([0-9]+)(\\.[0-9]{1,2})?"));
         BUILDER.pop();
         SPEC = BUILDER.build();
     }

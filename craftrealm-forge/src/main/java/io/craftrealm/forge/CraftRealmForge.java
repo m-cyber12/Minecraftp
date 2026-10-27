@@ -5,6 +5,7 @@ import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.command.ForgeCommands;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.jobs.ForgeJobListener;
+import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -31,6 +32,7 @@ public final class CraftRealmForge {
     private volatile ForgeDatabase database;
     private volatile ForgeClaims claims;
     private volatile ForgeJobListener jobListener;
+    private volatile ForgeMarket market;
     private long lastMaintenanceAt;
 
     public CraftRealmForge() {
@@ -41,7 +43,7 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        ForgeCommands.register(event, () -> database, () -> claims, LOGGER);
+        ForgeCommands.register(event, () -> database, () -> claims, () -> market, LOGGER);
     }
 
     @SubscribeEvent
@@ -53,8 +55,9 @@ public final class CraftRealmForge {
             ForgeClaims loadedClaims = new ForgeClaims(created, LOGGER);
             loadedClaims.load(created.loadClaims().join());
             claims = loadedClaims;
-            jobListener = new ForgeJobListener(() -> database, LOGGER);
             database = created;
+            jobListener = new ForgeJobListener(() -> database, LOGGER);
+            market = new ForgeMarket(created, LOGGER);
             lastMaintenanceAt = System.currentTimeMillis() - 60_000L;
             LOGGER.info("CraftRealm Forge services started for '{}'", event.getServer().getWorldData().getLevelName());
         } catch (Exception failure) {
@@ -109,6 +112,7 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
+        market = null;
         ForgeClaims currentClaims = claims;
         claims = null;
         if (currentClaims != null) currentClaims.close();

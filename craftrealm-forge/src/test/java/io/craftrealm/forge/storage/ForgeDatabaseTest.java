@@ -90,6 +90,34 @@ final class ForgeDatabaseTest {
     }
 
     @Test
+    void marketTradesUpdateWalletLedgerAndDynamicPricesAtomically() throws Exception {
+        UUID trader = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("market.db"), 1,
+                LoggerFactory.getLogger("forge-market-test"))) {
+            database.open();
+            database.balance(trader, "Trader", 10_000).join();
+            database.seedMarket(java.util.Map.of("minecraft:coal", 100L)).join();
+            ForgeDatabase.MarketTrade purchase = database.tradeMarket(trader, "Trader", "minecraft:coal",
+                    2, true, 10_000, 1_000_000).join();
+            assertTrue(purchase.success());
+            assertEquals(200L, purchase.totalCents());
+            assertEquals(9_800L, purchase.walletCents());
+            assertEquals(102L, purchase.nextPriceCents());
+
+            ForgeDatabase.MarketTrade sale = database.tradeMarket(trader, "Trader", "minecraft:coal",
+                    1, false, 10_000, 1_000_000).join();
+            assertTrue(sale.success());
+            assertEquals(102L, sale.totalCents());
+            assertEquals(9_902L, sale.walletCents());
+            assertEquals(101L, sale.nextPriceCents());
+            assertEquals(3L, database.marketQuote("minecraft:coal").join().tradedUnits());
+
+            assertEquals("wallet-funds", database.tradeMarket(trader, "Trader", "minecraft:coal",
+                    64, true, 10_000, 1_000_000).join().failure());
+        }
+    }
+
+    @Test
     void professionRewardsAreAtomicAndLevelUp() throws Exception {
         UUID worker = UUID.randomUUID();
         try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("jobs.db"), 1,
