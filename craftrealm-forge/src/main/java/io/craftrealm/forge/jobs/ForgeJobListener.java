@@ -1,6 +1,7 @@
 package io.craftrealm.forge.jobs;
 
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,11 +26,13 @@ public final class ForgeJobListener {
     private static final long PLACED_TTL_MILLIS = 5 * 60_000L;
 
     private final Supplier<ForgeDatabase> database;
+    private final ForgeEventService events;
     private final Logger logger;
     private final Map<String, Long> playerPlacedBlocks = new ConcurrentHashMap<>();
 
-    public ForgeJobListener(Supplier<ForgeDatabase> database, Logger logger) {
+    public ForgeJobListener(Supplier<ForgeDatabase> database, ForgeEventService events, Logger logger) {
         this.database = database;
+        this.events = events;
         this.logger = logger;
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -91,7 +94,7 @@ public final class ForgeJobListener {
         String name = player.getGameProfile().getName();
         java.util.UUID playerId = player.getUUID();
         MinecraftServer server = player.getServer();
-        long baseCents = Math.round(basePayout * 100.0);
+        long baseCents = Math.round(basePayout * events.rewardMultiplier(job) * 100.0);
         store.awardJob(playerId, name, job, baseCents,
                         Math.round(ForgeConfig.JOB_DAILY_CAP.get() * 100.0),
                         ForgeConfig.JOB_LEVEL_MULTIPLIER.get(), ForgeConfig.JOB_XP_PER_ACTION.get(),

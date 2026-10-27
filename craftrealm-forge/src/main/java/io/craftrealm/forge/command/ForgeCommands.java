@@ -8,6 +8,7 @@ import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
 import io.craftrealm.forge.api.ForgeTransactionType;
 import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.commands.CommandSourceStack;
@@ -34,7 +35,8 @@ public final class ForgeCommands {
     }
 
     public static void register(RegisterCommandsEvent event, Supplier<ForgeDatabase> database,
-                                Supplier<ForgeClaims> claims, Supplier<ForgeMarket> market, Logger logger) {
+                                Supplier<ForgeClaims> claims, Supplier<ForgeMarket> market,
+                                Supplier<ForgeEventService> events, Logger logger) {
         var dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> balance = Commands.literal("balance")
                 .executes(context -> balanceSelf(context.getSource(), database, logger))
@@ -121,6 +123,20 @@ public final class ForgeCommands {
                                                 EntityArgument.getPlayer(context, "player"),
                                                 DoubleArgumentType.getDouble(context, "amount"), false,
                                                 database, logger))))));
+        dispatcher.register(Commands.literal("event")
+                .executes(context -> eventStatus(context.getSource(), events))
+                .then(Commands.literal("status")
+                        .executes(context -> eventStatus(context.getSource(), events)))
+                .then(Commands.literal("start").requires(source -> source.hasPermission(2))
+                        .then(Commands.argument("job", StringArgumentType.word())
+                                .then(Commands.argument("minutes", IntegerArgumentType.integer(1, 1440))
+                                        .then(Commands.argument("multiplier", DoubleArgumentType.doubleArg(1.0, 10.0))
+                                                .executes(context -> startEvent(context.getSource(),
+                                                        StringArgumentType.getString(context, "job"),
+                                                        IntegerArgumentType.getInteger(context, "minutes"),
+                                                        DoubleArgumentType.getDouble(context, "multiplier"), events))))))
+                .then(Commands.literal("stop").requires(source -> source.hasPermission(2))
+                        .executes(context -> stopEvent(context.getSource(), events))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
@@ -234,6 +250,44 @@ public final class ForgeCommands {
                                 }
                             }));
                 }));
+        return 1;
+    }
+
+    private static int eventStatus(CommandSourceStack source, Supplier<ForgeEventService> eventsSupplier) {
+        ForgeEventService events = eventsSupplier.get();
+        ForgeEventService.ActiveEvent active = events == null ? null : events.active();
+        if (active == null) {
+            source.sendSuccess(() -> Component.literal("No profession event is currently active."), false);
+        } else {
+            long seconds = Math.max(0L, (active.endsAtMillis() - System.currentTimeMillis()) / 1000L);
+            source.sendSuccess(() -> Component.literal("Active event: " + active.job().toLowerCase(Locale.ROOT)
+                    + " rewards ×" + active.multiplier() + " · " + seconds + " seconds remain."), false);
+        }
+        return 1;
+    }
+
+    private static int startEvent(CommandSourceStack source, String rawJob, int minutes, double multiplier,
+                                  Supplier<ForgeEventService> eventsSupplier) {
+        String job = rawJob.toUpperCase(Locale.ROOT);
+        if (!java.util.Set.of("ALL", "MINER", "FARMER", "HUNTER", "FISHER", "BUILDER").contains(job)) {
+            source.sendFailure(Component.literal("Job must be all, miner, farmer, hunter, fisher, or builder."));
+            return 0;
+        }
+        ForgeEventService events = eventsSupplier.get();
+        if (events == null) {
+            source.sendFailure(Component.literal("Event service is not available."));
+            return 0;
+        }
+        events.start(source.getServer(), job, minutes, multiplier);
+        return 1;
+    }
+
+    private static int stopEvent(CommandSourceStack source, Supplier<ForgeEventService> eventsSupplier) {
+        ForgeEventService events = eventsSupplier.get();
+        if (events == null || !events.stop(source.getServer())) {
+            source.sendFailure(Component.literal("No profession event is active."));
+            return 0;
+        }
         return 1;
     }
 

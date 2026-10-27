@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.command.ForgeCommands;
 import io.craftrealm.forge.config.ForgeConfig;
+import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.jobs.ForgeJobListener;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
@@ -31,6 +32,7 @@ public final class CraftRealmForge {
 
     private volatile ForgeDatabase database;
     private volatile ForgeClaims claims;
+    private final ForgeEventService events = new ForgeEventService();
     private volatile ForgeJobListener jobListener;
     private volatile ForgeMarket market;
     private long lastMaintenanceAt;
@@ -43,7 +45,7 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        ForgeCommands.register(event, () -> database, () -> claims, () -> market, LOGGER);
+        ForgeCommands.register(event, () -> database, () -> claims, () -> market, () -> events, LOGGER);
     }
 
     @SubscribeEvent
@@ -62,7 +64,7 @@ public final class CraftRealmForge {
                     loadedClaims.load(loaded);
                 }
             }));
-            jobListener = new ForgeJobListener(() -> database, LOGGER);
+            jobListener = new ForgeJobListener(() -> database, events, LOGGER);
             market = new ForgeMarket(created, LOGGER);
             lastMaintenanceAt = System.currentTimeMillis() - 60_000L;
             LOGGER.info("CraftRealm Forge services started for '{}'", event.getServer().getWorldData().getLevelName());
@@ -95,6 +97,7 @@ public final class CraftRealmForge {
             return;
         }
         long now = System.currentTimeMillis();
+        events.tick(event.getServer(), now);
         if (now - lastMaintenanceAt < 60_000L) {
             return;
         }
