@@ -292,8 +292,8 @@ public final class ForgeCommands {
                         return;
                     }
                     net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(item, quantity);
-                    net.minecraft.world.item.ItemStack remainder = online.getInventory().add(stack);
-                    if (!remainder.isEmpty()) online.drop(remainder, false);
+                    online.getInventory().add(stack);
+                    if (!stack.isEmpty()) online.drop(stack.copy(), false);
                     online.sendSystemMessage(Component.literal("Bought " + quantity + " " + id + " for "
                             + format(trade.totalCents()) + ". Wallet: " + format(trade.walletCents())));
                 }));
@@ -366,8 +366,8 @@ public final class ForgeCommands {
                                      java.util.List<net.minecraft.world.item.ItemStack> stacks) {
         for (net.minecraft.world.item.ItemStack stack : stacks) {
             if (online != null) {
-                net.minecraft.world.item.ItemStack remainder = online.getInventory().add(stack);
-                if (!remainder.isEmpty()) online.drop(remainder, false);
+                online.getInventory().add(stack);
+                if (!stack.isEmpty()) online.drop(stack.copy(), false);
             } else if (!stack.isEmpty()) {
                 net.minecraft.world.entity.item.ItemEntity dropped = new net.minecraft.world.entity.item.ItemEntity(
                         level, position.x, position.y, position.z, stack);
