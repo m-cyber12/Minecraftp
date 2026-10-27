@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
 import io.craftrealm.forge.api.ForgeTransactionType;
+import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.storage.ForgeDatabase;
 import net.minecraft.commands.CommandSourceStack;
@@ -30,7 +31,7 @@ public final class ForgeCommands {
     }
 
     public static void register(RegisterCommandsEvent event, Supplier<ForgeDatabase> database,
-                                Logger logger) {
+                                Supplier<ForgeClaims> claims, Logger logger) {
         var dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> balance = Commands.literal("balance")
                 .executes(context -> balanceSelf(context.getSource(), database, logger))
@@ -68,6 +69,12 @@ public final class ForgeCommands {
                         .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.01))
                                 .executes(context -> repayLoan(context.getSource(),
                                         DoubleArgumentType.getDouble(context, "amount"), database, logger)))));
+        dispatcher.register(Commands.literal("claim")
+                .executes(context -> claim(context.getSource(), claims, logger)));
+        dispatcher.register(Commands.literal("unclaim")
+                .executes(context -> unclaim(context.getSource(), claims)));
+        dispatcher.register(Commands.literal("claims")
+                .executes(context -> listClaims(context.getSource(), claims)));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
@@ -182,6 +189,77 @@ public final class ForgeCommands {
                             }));
                 }));
         return 1;
+    }
+
+    private static int claim(CommandSourceStack source, Supplier<ForgeClaims> claimsSupplier, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeClaims claims = claimsSupplier.get();
+        if (claims == null) {
+            source.sendFailure(Component.literal("Claim protection is still starting."));
+            return 0;
+        }
+        String dimension = player.level().dimension().location().toString();
+        int chunkX = player.chunkPosition().x;
+        int chunkZ = player.chunkPosition().z;
+        long cost = toCents(ForgeConfig.CLAIM_COST.get());
+        claims.createAsync(player, dimension, chunkX, chunkZ, cost, startingCents(),
+                ForgeConfig.MAX_CLAIMS_PER_PLAYER.get(), result -> {
+                    if (!result.success()) {
+                        source.sendFailure(Component.literal(switch (result.failure()) {
+                            case "already-claimed" -> "This chunk is already claimed.";
+                            case "claim-limit" -> "You have reached the configured claim limit.";
+                            case "insufficient-funds" -> "You cannot afford this claim.";
+                            default -> "Claim could not be created. Check the server log.";
+                        }));
+                        if ("storage-error".equals(result.failure())) {
+                            logger.error("Claim creation failed due to a storage error.");
+                        }
+                        return;
+                    }
+                    source.sendSuccess(() -> Component.literal("Claimed chunk " + chunkX + ", " + chunkZ
+                            + " in " + dimension + " for " + format(cost) + ". Wallet: "
+                            + format(result.walletCents())), false);
+                });
+        return 1;
+    }
+
+    private static int unclaim(CommandSourceStack source, Supplier<ForgeClaims> claimsSupplier) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeClaims claims = claimsSupplier.get();
+        if (claims == null) {
+            source.sendFailure(Component.literal("Claim protection is still starting."));
+            return 0;
+        }
+        String dimension = player.level().dimension().location().toString();
+        int chunkX = player.chunkPosition().x;
+        int chunkZ = player.chunkPosition().z;
+        claims.removeAsync(player, dimension, chunkX, chunkZ, result -> {
+            if (!result.success()) {
+                source.sendFailure(Component.literal("You do not own a claim in this chunk."));
+                return;
+            }
+            source.sendSuccess(() -> Component.literal("Unclaimed chunk " + chunkX + ", " + chunkZ + "."), false);
+        });
+        return 1;
+    }
+
+    private static int listClaims(CommandSourceStack source, Supplier<ForgeClaims> claimsSupplier) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeClaims claims = claimsSupplier.get();
+        if (claims == null) {
+            source.sendFailure(Component.literal("Claim protection is still starting."));
+            return 0;
+        }
+        var owned = claims.ownedBy(player.getUUID());
+        source.sendSuccess(() -> Component.literal("Your claimed chunks: " + owned.size()), false);
+        for (ForgeDatabase.Claim claim : owned) {
+            source.sendSuccess(() -> Component.literal("- " + claim.dimension() + " ["
+                    + claim.chunkX() + ", " + claim.chunkZ() + "]"), false);
+        }
+        return owned.size();
     }
 
     private static int bankBalance(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {

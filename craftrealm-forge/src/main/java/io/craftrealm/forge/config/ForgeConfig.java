@@ -17,6 +17,8 @@ public final class ForgeConfig {
     public static final ForgeConfigSpec.DoubleValue BANK_MAX_LOAN;
     public static final ForgeConfigSpec.IntValue BANK_LOAN_TERM_DAYS;
     public static final ForgeConfigSpec.DoubleValue BANK_LOAN_PENALTY_PERCENT;
+    public static final ForgeConfigSpec.DoubleValue CLAIM_COST;
+    public static final ForgeConfigSpec.IntValue MAX_CLAIMS_PER_PLAYER;
     public static final ForgeConfigSpec SPEC;
 
     static {
@@ -35,6 +37,10 @@ public final class ForgeConfig {
         BANK_MAX_LOAN = BUILDER.defineInRange("maximum-loan", 5_000.0, 0.0, 1.0e12);
         BANK_LOAN_TERM_DAYS = BUILDER.defineInRange("loan-term-days", 14, 1, 3650);
         BANK_LOAN_PENALTY_PERCENT = BUILDER.defineInRange("loan-default-penalty-percent", 10.0, 0.0, 1000.0);
+        BUILDER.pop();
+        BUILDER.push("claims");
+        CLAIM_COST = BUILDER.defineInRange("cost-per-chunk", 250.0, 0.0, 1.0e12);
+        MAX_CLAIMS_PER_PLAYER = BUILDER.defineInRange("max-per-player", 16, 1, 1000);
         BUILDER.pop();
         SPEC = BUILDER.build();
     }

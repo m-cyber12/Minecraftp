@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -100,6 +101,20 @@ public final class ForgeDatabase implements AutoCloseable {
                     )
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_loans_owner ON cr_loans(uuid, status)");
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_claims (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        dimension TEXT NOT NULL,
+                        chunk_x INTEGER NOT NULL,
+                        chunk_z INTEGER NOT NULL,
+                        owner TEXT NOT NULL,
+                        owner_name TEXT NOT NULL,
+                        created_at INTEGER NOT NULL,
+                        last_upkeep INTEGER NOT NULL,
+                        UNIQUE(dimension, chunk_x, chunk_z)
+                    )
+                    """);
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
             if (!connection.isValid(3)) {
                 throw new SQLException("SQLite connection failed validation");
             }
@@ -510,6 +525,126 @@ public final class ForgeDatabase implements AutoCloseable {
         }
     }
 
+    public CompletableFuture<List<Claim>> loadClaims() {
+        return supply(connection -> {
+            List<Claim> result = new ArrayList<>();
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT dimension,chunk_x,chunk_z,owner,owner_name,created_at,last_upkeep FROM cr_claims");
+                 ResultSet rows = query.executeQuery()) {
+                while (rows.next()) {
+                    result.add(new Claim(rows.getString("dimension"), rows.getInt("chunk_x"),
+                            rows.getInt("chunk_z"), UUID.fromString(rows.getString("owner")),
+                            rows.getString("owner_name"), rows.getLong("created_at"), rows.getLong("last_upkeep")));
+                }
+            }
+            return result;
+        });
+    }
+
+    public CompletableFuture<ClaimResult> createClaim(UUID owner, String ownerName, String dimension,
+                                                       int chunkX, int chunkZ, long costCents,
+                                                       long openingBalanceCents, int maximumClaims) {
+        return supply(connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                ensureAccount(connection, owner, ownerName, openingBalanceCents);
+                try (PreparedStatement existing = connection.prepareStatement(
+                        "SELECT owner FROM cr_claims WHERE dimension=? AND chunk_x=? AND chunk_z=?")) {
+                    existing.setString(1, dimension);
+                    existing.setInt(2, chunkX);
+                    existing.setInt(3, chunkZ);
+                    try (ResultSet rows = existing.executeQuery()) {
+                        if (rows.next()) {
+                            connection.rollback();
+                            return ClaimResult.failed("already-claimed");
+                        }
+                    }
+                }
+                try (PreparedStatement count = connection.prepareStatement(
+                        "SELECT COUNT(*) FROM cr_claims WHERE owner=?")) {
+                    count.setString(1, owner.toString());
+                    try (ResultSet rows = count.executeQuery()) {
+                        if (rows.next() && rows.getInt(1) >= maximumClaims) {
+                            connection.rollback();
+                            return ClaimResult.failed("claim-limit");
+                        }
+                    }
+                }
+                long now = System.currentTimeMillis();
+                if (costCents > 0) {
+                    try (PreparedStatement debit = connection.prepareStatement(
+                            "UPDATE cr_accounts SET balance_cents=balance_cents-?,updated_at=? WHERE uuid=? AND balance_cents>=?")) {
+                        debit.setLong(1, costCents);
+                        debit.setLong(2, now);
+                        debit.setString(3, owner.toString());
+                        debit.setLong(4, costCents);
+                        if (debit.executeUpdate() == 0) {
+                            connection.rollback();
+                            return ClaimResult.failed("insufficient-funds");
+                        }
+                    }
+                }
+                try (PreparedStatement insert = connection.prepareStatement(
+                        "INSERT INTO cr_claims(dimension,chunk_x,chunk_z,owner,owner_name,created_at,last_upkeep) VALUES(?,?,?,?,?,?,?)")) {
+                    insert.setString(1, dimension);
+                    insert.setInt(2, chunkX);
+                    insert.setInt(3, chunkZ);
+                    insert.setString(4, owner.toString());
+                    insert.setString(5, ownerName);
+                    insert.setLong(6, now);
+                    insert.setLong(7, now);
+                    insert.executeUpdate();
+                }
+                if (costCents > 0) {
+                    insertTransaction(connection, "CLAIM_PURCHASE", owner, null, costCents,
+                            "chunk claim", owner, now);
+                }
+                long wallet = readBalance(connection, owner);
+                connection.commit();
+                return ClaimResult.success(new Claim(dimension, chunkX, chunkZ, owner,
+                        ownerName, now, now), wallet);
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                if (failure instanceof SQLException sql && sql.getMessage() != null
+                        && sql.getMessage().toLowerCase(Locale.ROOT).contains("unique")) {
+                    return ClaimResult.failed("already-claimed");
+                }
+                throw failure;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
+    public CompletableFuture<ClaimResult> removeClaim(UUID owner, String dimension, int chunkX, int chunkZ) {
+        return supply(connection -> inTransaction(connection, ignored -> {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT dimension,chunk_x,chunk_z,owner,owner_name,created_at,last_upkeep FROM cr_claims WHERE dimension=? AND chunk_x=? AND chunk_z=?")) {
+                query.setString(1, dimension);
+                query.setInt(2, chunkX);
+                query.setInt(3, chunkZ);
+                Claim claim;
+                try (ResultSet rows = query.executeQuery()) {
+                    if (!rows.next()) return ClaimResult.failed("not-claimed");
+                    claim = new Claim(rows.getString("dimension"), rows.getInt("chunk_x"),
+                            rows.getInt("chunk_z"), UUID.fromString(rows.getString("owner")),
+                            rows.getString("owner_name"), rows.getLong("created_at"), rows.getLong("last_upkeep"));
+                }
+                if (!claim.owner().equals(owner)) return ClaimResult.failed("not-owner");
+                try (PreparedStatement delete = connection.prepareStatement("DELETE FROM cr_claims WHERE id = (SELECT id FROM cr_claims "
+                            + "WHERE dimension=? AND chunk_x=? AND chunk_z=? AND owner=?)")) {
+                    delete.setString(1, dimension);
+                    delete.setInt(2, chunkX);
+                    delete.setInt(3, chunkZ);
+                    delete.setString(4, owner.toString());
+                    if (delete.executeUpdate() != 1) return ClaimResult.failed("not-owner");
+                }
+                return ClaimResult.removed(claim);
+            }
+        }));
+    }
+
     private static void ensureAccount(Connection connection, UUID uuid, String name, long initialCents)
             throws SQLException {
         long now = System.currentTimeMillis();
@@ -618,6 +753,15 @@ public final class ForgeDatabase implements AutoCloseable {
         static Payment recipientAtLimit() {
             return new Payment(false, false, true, 0, 0);
         }
+    }
+
+    public record Claim(String dimension, int chunkX, int chunkZ, UUID owner,
+                        String ownerName, long createdAt, long lastUpkeep) { }
+
+    public record ClaimResult(boolean success, String failure, Claim claim, long walletCents) {
+        static ClaimResult success(Claim claim, long wallet) { return new ClaimResult(true, null, claim, wallet); }
+        static ClaimResult removed(Claim claim) { return new ClaimResult(true, null, claim, 0); }
+        public static ClaimResult failed(String reason) { return new ClaimResult(false, reason, null, 0); }
     }
 
     public record BankSnapshot(long walletCents, long bankCents) { }

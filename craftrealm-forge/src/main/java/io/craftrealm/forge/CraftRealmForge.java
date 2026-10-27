@@ -1,6 +1,7 @@
 package io.craftrealm.forge;
 
 import com.mojang.logging.LogUtils;
+import io.craftrealm.forge.claims.ForgeClaims;
 import io.craftrealm.forge.command.ForgeCommands;
 import io.craftrealm.forge.config.ForgeConfig;
 import io.craftrealm.forge.storage.ForgeDatabase;
@@ -27,6 +28,7 @@ public final class CraftRealmForge {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private volatile ForgeDatabase database;
+    private volatile ForgeClaims claims;
     private long lastMaintenanceAt;
 
     public CraftRealmForge() {
@@ -37,7 +39,7 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        ForgeCommands.register(event, () -> database, LOGGER);
+        ForgeCommands.register(event, () -> database, () -> claims, LOGGER);
     }
 
     @SubscribeEvent
@@ -46,6 +48,9 @@ public final class CraftRealmForge {
         ForgeDatabase created = new ForgeDatabase(databaseFile, ForgeConfig.DATABASE_THREADS.get(), LOGGER);
         try {
             created.open();
+            ForgeClaims loadedClaims = new ForgeClaims(created, LOGGER);
+            loadedClaims.load(created.loadClaims().join());
+            claims = loadedClaims;
             database = created;
             lastMaintenanceAt = System.currentTimeMillis() - 60_000L;
             LOGGER.info("CraftRealm Forge services started for '{}'", event.getServer().getWorldData().getLevelName());
@@ -101,6 +106,9 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
+        ForgeClaims currentClaims = claims;
+        claims = null;
+        if (currentClaims != null) currentClaims.close();
         ForgeDatabase current = database;
         database = null;
         if (current != null) {

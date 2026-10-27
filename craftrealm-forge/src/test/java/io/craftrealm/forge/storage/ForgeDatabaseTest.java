@@ -66,4 +66,26 @@ final class ForgeDatabaseTest {
             assertEquals(0L, repaid.remainingCents());
         }
     }
+
+    @Test
+    void claimsChargeTheOwnerAndCannotBeRemovedBySomeoneElse() throws Exception {
+        UUID owner = UUID.randomUUID();
+        UUID stranger = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("claims.db"), 1,
+                LoggerFactory.getLogger("forge-claims-test"))) {
+            database.open();
+            ForgeDatabase.ClaimResult created = database.createClaim(owner, "Owner", "minecraft:overworld",
+                    12, -3, 2_500, 10_000, 4).join();
+            assertTrue(created.success());
+            assertEquals(7_500L, created.walletCents());
+            assertEquals(1, database.loadClaims().join().size());
+
+            assertEquals("already-claimed", database.createClaim(stranger, "Stranger", "minecraft:overworld",
+                    12, -3, 2_500, 0, 4).join().failure());
+            assertEquals("not-owner", database.removeClaim(stranger, "minecraft:overworld", 12, -3)
+                    .join().failure());
+            assertTrue(database.removeClaim(owner, "minecraft:overworld", 12, -3).join().success());
+            assertTrue(database.loadClaims().join().isEmpty());
+        }
+    }
 }
