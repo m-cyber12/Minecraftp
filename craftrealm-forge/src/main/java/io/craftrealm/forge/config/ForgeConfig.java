@@ -31,6 +31,10 @@ public final class ForgeConfig {
     public static final ForgeConfigSpec.IntValue QUEST_ACTIONS_REQUIRED;
     public static final ForgeConfigSpec.DoubleValue QUEST_REWARD;
     public static final ForgeConfigSpec.IntValue SEASON_DURATION_DAYS;
+    public static final ForgeConfigSpec.BooleanValue WEB_ENABLED;
+    public static final ForgeConfigSpec.ConfigValue<String> WEB_HOST;
+    public static final ForgeConfigSpec.IntValue WEB_PORT;
+    public static final ForgeConfigSpec.ConfigValue<String> WEB_TOKEN;
     public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> MARKET_CATALOGUE;
     public static final ForgeConfigSpec SPEC;
 
@@ -72,6 +76,12 @@ public final class ForgeConfig {
         BUILDER.pop();
         BUILDER.push("seasons");
         SEASON_DURATION_DAYS = BUILDER.defineInRange("duration-days", 28, 1, 3650);
+        BUILDER.pop();
+        BUILDER.push("web");
+        WEB_ENABLED = BUILDER.define("enabled", false);
+        WEB_HOST = BUILDER.define("host", "127.0.0.1");
+        WEB_PORT = BUILDER.defineInRange("port", 8765, 1024, 65535);
+        WEB_TOKEN = BUILDER.define("token", "");
         BUILDER.pop();
         BUILDER.push("market");
         MARKET_CATALOGUE = BUILDER.comment("Allowed items and base prices in format namespace:item=price.")

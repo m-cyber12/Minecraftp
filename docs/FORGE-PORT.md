@@ -24,7 +24,9 @@ give` and `/cradmin take` adjustments are audited through the economy ledger.
 `/event stop` cancels them. Daily profession quests persist action progress and
 allow a single claim for a configurable reward. `/cosmetic` provides persistent,
 server-rendered particle trails with equip and clear commands. `/season` tracks
-fixed-length profession seasons and leaderboards from completed work actions. Bank transfers are atomic; the bank
+fixed-length profession seasons and leaderboards from completed work actions. An
+optional token-protected, read-only HTTP dashboard exposes server status, market
+quotes, and top balances; it binds to loopback by default. Bank transfers are atomic; the bank
 applies configurable daily interest, supports term loans, and applies a one-time
 late penalty after a two-day grace period. Chunk claims persist and protect block
 break, placement and right-click interactions. The five job paths award

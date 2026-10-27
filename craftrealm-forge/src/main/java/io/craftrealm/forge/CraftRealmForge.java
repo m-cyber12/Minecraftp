@@ -9,6 +9,7 @@ import io.craftrealm.forge.events.ForgeEventService;
 import io.craftrealm.forge.jobs.ForgeJobListener;
 import io.craftrealm.forge.market.ForgeMarket;
 import io.craftrealm.forge.storage.ForgeDatabase;
+import io.craftrealm.forge.web.ForgeWebPanel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -37,6 +38,7 @@ public final class CraftRealmForge {
     private volatile ForgeJobListener jobListener;
     private volatile ForgeMarket market;
     private volatile ForgeCosmetics cosmetics;
+    private volatile ForgeWebPanel webPanel;
     private long lastMaintenanceAt;
 
     public CraftRealmForge() {
@@ -71,6 +73,16 @@ public final class CraftRealmForge {
             market = new ForgeMarket(created, LOGGER);
             cosmetics = new ForgeCosmetics(() -> database);
             cosmetics.load();
+            if (ForgeConfig.WEB_ENABLED.get()) {
+                ForgeWebPanel panel = new ForgeWebPanel(() -> database, ForgeConfig.WEB_TOKEN.get(), LOGGER);
+                try {
+                    if (panel.start(ForgeConfig.WEB_HOST.get(), ForgeConfig.WEB_PORT.get())) webPanel = panel;
+                    else panel.close();
+                } catch (java.io.IOException webFailure) {
+                    panel.close();
+                    LOGGER.error("Could not start the CraftRealm web dashboard", webFailure);
+                }
+            }
             lastMaintenanceAt = System.currentTimeMillis() - 60_000L;
             LOGGER.info("CraftRealm Forge services started for '{}'", event.getServer().getWorldData().getLevelName());
         } catch (Exception failure) {
@@ -107,6 +119,10 @@ public final class CraftRealmForge {
         events.tick(event.getServer(), now);
         ForgeCosmetics currentCosmetics = cosmetics;
         if (currentCosmetics != null) currentCosmetics.tick(event.getServer());
+        ForgeWebPanel currentWeb = webPanel;
+        if (currentWeb != null) currentWeb.updateStatus(
+                event.getServer().getWorldData().getLevelName(),
+                event.getServer().getPlayerList().getPlayers().size());
         if (now - lastMaintenanceAt < 60_000L) {
             return;
         }
@@ -130,6 +146,9 @@ public final class CraftRealmForge {
 
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
+        ForgeWebPanel currentWeb = webPanel;
+        webPanel = null;
+        if (currentWeb != null) currentWeb.close();
         market = null;
         ForgeCosmetics currentCosmetics = cosmetics;
         cosmetics = null;
