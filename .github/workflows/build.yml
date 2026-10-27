@@ -54,6 +54,9 @@ jobs:
           ./gradlew compileJava compileTestJava :craftrealm-forge:compileJava :craftrealm-forge:compileTestJava --stacktrace --console=plain 2>&1 | tee compile.log
           result=${PIPESTATUS[0]}
           python3 .github/scripts/report_compile.py compile.log
+          if [ "$result" -ne 0 ]; then
+            python3 .github/scripts/report_build.py compile.log
+          fi
           exit "$result"
 
       - name: Run unit tests
