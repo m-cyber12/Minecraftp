@@ -98,7 +98,8 @@ public final class ForgeJobListener {
         store.awardJob(playerId, name, job, baseCents,
                         Math.round(ForgeConfig.JOB_DAILY_CAP.get() * 100.0),
                         ForgeConfig.JOB_LEVEL_MULTIPLIER.get(), ForgeConfig.JOB_XP_PER_ACTION.get(),
-                        ForgeConfig.JOB_MAX_LEVEL.get(), Math.round(ForgeConfig.STARTING_BALANCE.get() * 100.0),
+                        ForgeConfig.JOB_MAX_LEVEL.get(), seasonKey(),
+                        Math.round(ForgeConfig.STARTING_BALANCE.get() * 100.0),
                         Math.round(ForgeConfig.MAX_BALANCE.get() * 100.0))
                 .whenComplete((award, failure) -> {
                     if (failure != null) {
@@ -118,6 +119,11 @@ public final class ForgeJobListener {
                         }
                     });
                 });
+    }
+
+    private static long seasonKey() {
+        long day = Math.floorDiv(System.currentTimeMillis(), 86_400_000L);
+        return Math.floorDiv(day, ForgeConfig.SEASON_DURATION_DAYS.get());
     }
 
     private static String key(ServerPlayer player, int x, int y, int z) {

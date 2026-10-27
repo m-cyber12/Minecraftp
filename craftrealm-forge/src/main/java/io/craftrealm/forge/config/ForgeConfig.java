@@ -30,6 +30,7 @@ public final class ForgeConfig {
     public static final ForgeConfigSpec.IntValue JOB_MAX_LEVEL;
     public static final ForgeConfigSpec.IntValue QUEST_ACTIONS_REQUIRED;
     public static final ForgeConfigSpec.DoubleValue QUEST_REWARD;
+    public static final ForgeConfigSpec.IntValue SEASON_DURATION_DAYS;
     public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> MARKET_CATALOGUE;
     public static final ForgeConfigSpec SPEC;
 
@@ -68,6 +69,9 @@ public final class ForgeConfig {
         BUILDER.push("quests");
         QUEST_ACTIONS_REQUIRED = BUILDER.defineInRange("actions-required", 20, 1, 100_000);
         QUEST_REWARD = BUILDER.defineInRange("reward", 250.0, 0.0, 1.0e12);
+        BUILDER.pop();
+        BUILDER.push("seasons");
+        SEASON_DURATION_DAYS = BUILDER.defineInRange("duration-days", 28, 1, 3650);
         BUILDER.pop();
         BUILDER.push("market");
         MARKET_CATALOGUE = BUILDER.comment("Allowed items and base prices in format namespace:item=price.")

@@ -118,6 +118,16 @@ public final class ForgeDatabase implements AutoCloseable {
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
             statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_season_points (
+                        season_key BIGINT NOT NULL,
+                        uuid TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        points INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY(season_key, uuid)
+                    )
+                    """);
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_season_points_rank ON cr_season_points(season_key, points DESC)");
+            statement.execute("""
                     CREATE TABLE IF NOT EXISTS cr_cosmetics (
                         uuid TEXT PRIMARY KEY NOT NULL,
                         trail TEXT NOT NULL
@@ -907,10 +917,39 @@ public final class ForgeDatabase implements AutoCloseable {
         });
     }
 
+    public CompletableFuture<Long> seasonScore(UUID uuid, long seasonKey) {
+        return supply(connection -> {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT points FROM cr_season_points WHERE season_key=? AND uuid=?")) {
+                query.setLong(1, seasonKey);
+                query.setString(2, uuid.toString());
+                try (ResultSet rows = query.executeQuery()) {
+                    return rows.next() ? rows.getLong(1) : 0L;
+                }
+            }
+        });
+    }
+
+    public CompletableFuture<List<SeasonRank>> seasonTop(long seasonKey, int limit) {
+        return supply(connection -> {
+            List<SeasonRank> ranks = new ArrayList<>();
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT uuid,name,points FROM cr_season_points WHERE season_key=? ORDER BY points DESC,name ASC LIMIT ?")) {
+                query.setLong(1, seasonKey);
+                query.setInt(2, Math.max(1, Math.min(100, limit)));
+                try (ResultSet rows = query.executeQuery()) {
+                    while (rows.next()) ranks.add(new SeasonRank(UUID.fromString(rows.getString(1)),
+                            rows.getString(2), rows.getLong(3)));
+                }
+            }
+            return List.copyOf(ranks);
+        });
+    }
+
     public CompletableFuture<JobAward> awardJob(UUID uuid, String playerName, String job,
                                                   long basePayoutCents, long dailyCapCents,
                                                   double multiplierPerLevel, int xpPerAction, int maxLevel,
-                                                  long initialBalanceCents,
+                                                  long seasonKey, long initialBalanceCents,
                                                   long maxBalanceCents) {
         return supply(connection -> {
             boolean previousAutoCommit = connection.getAutoCommit();
@@ -992,8 +1031,17 @@ public final class ForgeDatabase implements AutoCloseable {
                     update.setString(6, job);
                     update.executeUpdate();
                 }
+                try (PreparedStatement season = connection.prepareStatement(
+                        "INSERT INTO cr_season_points(season_key,uuid,name,points) VALUES(?,?,?,1) "
+                                + "ON CONFLICT(season_key,uuid) DO UPDATE SET "
+                                + "points=cr_season_points.points+1,name=excluded.name")) {
+                    season.setLong(1, seasonKey);
+                    season.setString(2, uuid.toString());
+                    season.setString(3, playerName);
+                    season.executeUpdate();
+                }
                 try (PreparedStatement quest = connection.prepareStatement(
-                        "INSERT INTO cr_daily_quests(uuid,day_key,progress,claimed) VALUES(?,?,1,0) "
+                        "INSERT INTO cr_daily_quests(uuid,day_key,progress,claimed) VALUES(?,?,1,0) "}
                                 + "ON CONFLICT(uuid) DO UPDATE SET "
                                 + "progress=CASE WHEN cr_daily_quests.day_key=excluded.day_key THEN cr_daily_quests.progress+1 ELSE 1 END, "
                                 + "claimed=CASE WHEN cr_daily_quests.day_key=excluded.day_key THEN cr_daily_quests.claimed ELSE 0 END, "
@@ -1264,6 +1312,8 @@ public final class ForgeDatabase implements AutoCloseable {
             return new MarketTrade(true, null, itemId, quantity, unitPrice, total, wallet, nextPrice);
         }
     }
+
+    public record SeasonRank(UUID uuid, String name, long points) { }
 
     public record QuestState(int progress, int actionsRequired, boolean claimed, long dayKey) {
         public boolean readyToClaim() { return progress >= actionsRequired && !claimed; }

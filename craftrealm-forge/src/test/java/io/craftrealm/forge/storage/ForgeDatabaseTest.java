@@ -164,11 +164,13 @@ final class ForgeDatabaseTest {
             database.chooseJob(worker, "MINER").join();
             for (int i = 0; i < 2; i++) {
                 assertTrue(database.awardJob(worker, "Worker", "MINER", 100,
-                        10_000, 0.05, 4, 50, 10_000, 1_000_000).join().success());
+                        10_000, 0.05, 4, 50, 7, 10_000, 1_000_000).join().success());
             }
             ForgeDatabase.QuestState ready = database.questState(worker, 2).join();
             assertEquals(2, ready.progress());
             assertTrue(ready.readyToClaim());
+            assertEquals(2L, database.seasonScore(worker, 7).join());
+            assertEquals(2L, database.seasonTop(7, 10).join().get(0).points());
             ForgeDatabase.QuestClaim reward = database.claimQuest(worker, "Worker", 2,
                     500, 10_000, 1_000_000).join();
             assertTrue(reward.success());
@@ -190,14 +192,14 @@ final class ForgeDatabaseTest {
             ForgeDatabase.JobState selected = database.jobState(worker).join();
             assertEquals("MINER", selected.activeJob());
             ForgeDatabase.JobAward award = database.awardJob(worker, "Worker", "MINER",
-                    100, 10_000, 0.05, 100, 50, 0, 100_000).join();
+                    100, 10_000, 0.05, 100, 50, 2, 0, 100_000).join();
             assertTrue(award.success());
             assertTrue(award.levelUp());
             assertEquals(2, award.level());
             assertEquals(0L, award.xp());
             assertEquals(1_100L, award.walletCents());
             assertEquals("not-employed", database.awardJob(worker, "Worker", "FARMER",
-                    100, 10_000, 0.05, 100, 50, 0, 100_000).join().failure());
+                    100, 10_000, 0.05, 100, 50, 2, 0, 100_000).join().failure());
         }
     }
 }

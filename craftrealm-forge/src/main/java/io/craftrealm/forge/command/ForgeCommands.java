@@ -82,6 +82,10 @@ public final class ForgeCommands {
                 .executes(context -> unclaim(context.getSource(), claims)));
         dispatcher.register(Commands.literal("claims")
                 .executes(context -> listClaims(context.getSource(), claims)));
+        dispatcher.register(Commands.literal("season")
+                .executes(context -> seasonStatus(context.getSource(), database, logger))
+                .then(Commands.literal("top")
+                        .executes(context -> seasonTop(context.getSource(), database, logger))));
         dispatcher.register(Commands.literal("cosmetic")
                 .executes(context -> cosmeticStatus(context.getSource(), cosmetics))
                 .then(Commands.literal("equip")
@@ -154,7 +158,7 @@ public final class ForgeCommands {
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /cosmetic, /event, /cradmin"), false);
+                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin"), false);
                     return 1;
                 }));
     }
@@ -530,6 +534,50 @@ public final class ForgeCommands {
             if (failure != null) reportFailure(source, failure, logger);
             else source.sendSuccess(() -> Component.literal("Your profession is now "
                     + job.substring(0, 1) + job.substring(1).toLowerCase(Locale.ROOT) + "."), false);
+        }));
+        return 1;
+    }
+
+    private static int seasonStatus(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer player = requirePlayer(source);
+        if (player == null) return 0;
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        int days = ForgeConfig.SEASON_DURATION_DAYS.get();
+        long now = System.currentTimeMillis();
+        long seasonKey = Math.floorDiv(Math.floorDiv(now, 86_400_000L), days);
+        long until = (seasonKey + 1L) * days * 86_400_000L - now;
+        long remainingDays = Math.max(1, (until + 86_400_000L - 1) / 86_400_000L);
+        store.seasonScore(player.getUUID(), seasonKey).whenComplete((score, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else source.sendSuccess(() -> Component.literal("Current season " + (seasonKey + 1)
+                    + " · points " + score + " · " + remainingDays + " days remain. Use /season top."), false);
+        }));
+        return 1;
+    }
+
+    private static int seasonTop(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            return 0;
+        }
+        int days = ForgeConfig.SEASON_DURATION_DAYS.get();
+        long seasonKey = Math.floorDiv(Math.floorDiv(System.currentTimeMillis(), 86_400_000L), days);
+        store.seasonTop(seasonKey, 10).whenComplete((ranks, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else {
+                source.sendSuccess(() -> Component.literal("Season " + (seasonKey + 1) + " profession leaderboard:"), false);
+                int[] rank = {1};
+                for (ForgeDatabase.SeasonRank entry : ranks) {
+                    int place = rank[0]++;
+                    source.sendSuccess(() -> Component.literal(place + ". " + entry.name() + " · "
+                            + entry.points() + " points"), false);
+                }
+            }
         }));
         return 1;
     }
