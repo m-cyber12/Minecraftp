@@ -2,6 +2,7 @@ package io.craftrealm.forge.command;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.craftrealm.forge.api.ForgeBalanceChangeEvent;
@@ -128,6 +129,32 @@ public final class ForgeCommands {
                                         StringArgumentType.getString(context, "item"),
                                         IntegerArgumentType.getInteger(context, "quantity"),
                                         market, logger)))));
+        dispatcher.register(Commands.literal("report")
+                .then(Commands.argument("player", EntityArgument.player())
+                        .then(Commands.argument("reason", StringArgumentType.greedyString())
+                                .executes(context -> submitReport(context.getSource(),
+                                        EntityArgument.getPlayer(context, "player"),
+                                        StringArgumentType.getString(context, "reason"), database, logger)))));
+        dispatcher.register(Commands.literal("crreports")
+                .requires(source -> source.hasPermission(2))
+                .executes(context -> listReports(context.getSource(), database, logger)));
+        dispatcher.register(Commands.literal("crresolve")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.argument("id", LongArgumentType.longArg(1))
+                        .executes(context -> resolveReport(context.getSource(),
+                                LongArgumentType.getLong(context, "id"), database, logger))));
+        dispatcher.register(Commands.literal("crnote")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .then(Commands.argument("note", StringArgumentType.greedyString())
+                                .executes(context -> addStaffNote(context.getSource(),
+                                        EntityArgument.getPlayer(context, "player"),
+                                        StringArgumentType.getString(context, "note"), database, logger)))));
+        dispatcher.register(Commands.literal("crnotes")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(context -> listStaffNotes(context.getSource(),
+                                EntityArgument.getPlayer(context, "player"), database, logger))));
         dispatcher.register(Commands.literal("cradmin")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("give")
@@ -337,6 +364,106 @@ public final class ForgeCommands {
             source.sendFailure(Component.translatable("craftrealm.event.none"));
             return 0;
         }
+        return 1;
+    }
+
+    private static int submitReport(CommandSourceStack source, ServerPlayer target, String reason,
+                                    Supplier<ForgeDatabase> database, Logger logger) {
+        ServerPlayer reporter = requirePlayer(source);
+        if (reporter == null) return 0;
+        if (reporter.getUUID().equals(target.getUUID())) {
+            source.sendFailure(Component.translatable("craftrealm.report.self"));
+            return 0;
+        }
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
+            return 0;
+        }
+        String reporterName = reporter.getGameProfile().getName();
+        String targetName = target.getGameProfile().getName();
+        store.submitReport(reporter.getUUID(), reporterName, target.getUUID(), targetName, reason)
+                .whenComplete((result, failure) -> source.getServer().execute(() -> {
+                    if (failure != null) reportFailure(source, failure, logger);
+                    else if (!result.success()) source.sendFailure(Component.translatable(
+                            result.failure().equals("cooldown") ? "craftrealm.report.cooldown" : "craftrealm.report.invalid"));
+                    else source.sendSuccess(() -> Component.translatable(
+                            "craftrealm.report.submitted", result.id(), targetName), false);
+                }));
+        return 1;
+    }
+
+    private static int listReports(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
+            return 0;
+        }
+        store.openReports(25).whenComplete((reports, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else {
+                source.sendSuccess(() -> Component.translatable("craftrealm.report.list_header", reports.size()), false);
+                for (ForgeDatabase.Report report : reports) {
+                    source.sendSuccess(() -> Component.translatable("craftrealm.report.row", report.id(),
+                            report.reporter(), report.target(), report.reason()), false);
+                }
+            }
+        }));
+        return 1;
+    }
+
+    private static int resolveReport(CommandSourceStack source, long reportId,
+                                    Supplier<ForgeDatabase> database, Logger logger) {
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
+            return 0;
+        }
+        UUID staff = source.getEntity() instanceof ServerPlayer player ? player.getUUID() : new UUID(0, 0);
+        store.resolveReport(reportId, staff).whenComplete((resolved, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else if (resolved) source.sendSuccess(() -> Component.translatable("craftrealm.report.resolved", reportId), true);
+            else source.sendFailure(Component.translatable("craftrealm.report.not_open", reportId));
+        }));
+        return 1;
+    }
+
+    private static int addStaffNote(CommandSourceStack source, ServerPlayer target, String note,
+                                    Supplier<ForgeDatabase> database, Logger logger) {
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
+            return 0;
+        }
+        UUID staff = source.getEntity() instanceof ServerPlayer player ? player.getUUID() : new UUID(0, 0);
+        String staffName = source.getEntity() instanceof ServerPlayer player
+                ? player.getGameProfile().getName() : "Console";
+        String targetName = target.getGameProfile().getName();
+        store.addStaffNote(staff, staffName, target.getUUID(), targetName, note)
+                .whenComplete((ignored, failure) -> source.getServer().execute(() -> {
+                    if (failure != null) reportFailure(source, failure, logger);
+                    else source.sendSuccess(() -> Component.translatable("craftrealm.notes.added", targetName), true);
+                }));
+        return 1;
+    }
+
+    private static int listStaffNotes(CommandSourceStack source, ServerPlayer target,
+                                     Supplier<ForgeDatabase> database, Logger logger) {
+        ForgeDatabase store = database.get();
+        if (store == null) {
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
+            return 0;
+        }
+        String targetName = target.getGameProfile().getName();
+        store.staffNotes(target.getUUID(), 20).whenComplete((notes, failure) -> source.getServer().execute(() -> {
+            if (failure != null) reportFailure(source, failure, logger);
+            else {
+                source.sendSuccess(() -> Component.translatable("craftrealm.notes.header", targetName, notes.size()), true);
+                for (ForgeDatabase.StaffNote note : notes) {
+                    source.sendSuccess(() -> Component.translatable("craftrealm.notes.row", note.staff(), note.note()), true);
+                }
+            }
+        }));
         return 1;
     }
 

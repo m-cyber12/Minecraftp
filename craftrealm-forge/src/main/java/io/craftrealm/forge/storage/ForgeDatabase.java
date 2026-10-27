@@ -118,6 +118,33 @@ public final class ForgeDatabase implements AutoCloseable {
                     """);
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_claims_owner ON cr_claims(owner)");
             statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_reports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        reporter_uuid TEXT NOT NULL,
+                        reporter_name TEXT NOT NULL,
+                        target_uuid TEXT NOT NULL,
+                        target_name TEXT NOT NULL,
+                        reason TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'OPEN',
+                        created_at INTEGER NOT NULL,
+                        resolved_by TEXT,
+                        resolved_at INTEGER
+                    )
+                    """);
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_reports_status ON cr_reports(status, created_at DESC)");
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS cr_staff_notes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        staff_uuid TEXT NOT NULL,
+                        staff_name TEXT NOT NULL,
+                        target_uuid TEXT NOT NULL,
+                        target_name TEXT NOT NULL,
+                        note TEXT NOT NULL,
+                        created_at INTEGER NOT NULL
+                    )
+                    """);
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_cr_staff_notes_target ON cr_staff_notes(target_uuid, created_at DESC)");
+            statement.execute("""
                     CREATE TABLE IF NOT EXISTS cr_season_points (
                         season_key BIGINT NOT NULL,
                         uuid TEXT NOT NULL,
@@ -574,6 +601,121 @@ public final class ForgeDatabase implements AutoCloseable {
             transaction.setLong(7, now);
             transaction.executeUpdate();
         }
+    }
+
+    public CompletableFuture<ReportSubmission> submitReport(UUID reporter, String reporterName,
+                                                            UUID target, String targetName, String reason) {
+        String safeReason = reason == null ? "" : reason.trim();
+        if (safeReason.isEmpty() || safeReason.length() > 400) {
+            return CompletableFuture.completedFuture(new ReportSubmission(false, "reason", 0));
+        }
+        return supply(connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                long now = System.currentTimeMillis();
+                try (PreparedStatement recent = connection.prepareStatement(
+                        "SELECT 1 FROM cr_reports WHERE reporter_uuid=? AND created_at>? LIMIT 1")) {
+                    recent.setString(1, reporter.toString());
+                    recent.setLong(2, now - 60_000L);
+                    try (ResultSet rows = recent.executeQuery()) {
+                        if (rows.next()) {
+                            connection.rollback();
+                            return new ReportSubmission(false, "cooldown", 0);
+                        }
+                    }
+                }
+                long id;
+                try (PreparedStatement insert = connection.prepareStatement(
+                        "INSERT INTO cr_reports(reporter_uuid,reporter_name,target_uuid,target_name,reason,status,created_at) "
+                                + "VALUES(?,?,?,?,?,'OPEN',?)", Statement.RETURN_GENERATED_KEYS)) {
+                    insert.setString(1, reporter.toString());
+                    insert.setString(2, reporterName);
+                    insert.setString(3, target.toString());
+                    insert.setString(4, targetName);
+                    insert.setString(5, safeReason);
+                    insert.setLong(6, now);
+                    insert.executeUpdate();
+                    try (ResultSet keys = insert.getGeneratedKeys()) {
+                        if (!keys.next()) throw new SQLException("report insert did not return an id");
+                        id = keys.getLong(1);
+                    }
+                }
+                connection.commit();
+                return new ReportSubmission(true, null, id);
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
+    public CompletableFuture<List<Report>> openReports(int limit) {
+        return supply(connection -> {
+            List<Report> reports = new ArrayList<>();
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT id,reporter_name,target_name,reason,created_at FROM cr_reports WHERE status='OPEN' "
+                            + "ORDER BY created_at ASC LIMIT ?")) {
+                query.setInt(1, Math.max(1, Math.min(100, limit)));
+                try (ResultSet rows = query.executeQuery()) {
+                    while (rows.next()) reports.add(new Report(rows.getLong(1), rows.getString(2),
+                            rows.getString(3), rows.getString(4), rows.getLong(5)));
+                }
+            }
+            return List.copyOf(reports);
+        });
+    }
+
+    public CompletableFuture<Boolean> resolveReport(long reportId, UUID staff) {
+        return supply(connection -> inTransaction(connection, ignored -> {
+            try (PreparedStatement update = connection.prepareStatement(
+                    "UPDATE cr_reports SET status='RESOLVED',resolved_by=?,resolved_at=? WHERE id=? AND status='OPEN'")) {
+                update.setString(1, staff.toString());
+                update.setLong(2, System.currentTimeMillis());
+                update.setLong(3, reportId);
+                return update.executeUpdate() == 1;
+            }
+        }));
+    }
+
+    public CompletableFuture<Void> addStaffNote(UUID staff, String staffName, UUID target,
+                                                 String targetName, String note) {
+        String safeNote = note == null ? "" : note.trim();
+        if (safeNote.isEmpty() || safeNote.length() > 400) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("note must be 1-400 characters"));
+        }
+        return supply(connection -> inTransaction(connection, ignored -> {
+            try (PreparedStatement insert = connection.prepareStatement(
+                    "INSERT INTO cr_staff_notes(staff_uuid,staff_name,target_uuid,target_name,note,created_at) "
+                            + "VALUES(?,?,?,?,?,?)")) {
+                insert.setString(1, staff.toString());
+                insert.setString(2, staffName);
+                insert.setString(3, target.toString());
+                insert.setString(4, targetName);
+                insert.setString(5, safeNote);
+                insert.setLong(6, System.currentTimeMillis());
+                insert.executeUpdate();
+            }
+            return null;
+        }));
+    }
+
+    public CompletableFuture<List<StaffNote>> staffNotes(UUID target, int limit) {
+        return supply(connection -> {
+            List<StaffNote> notes = new ArrayList<>();
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT staff_name,note,created_at FROM cr_staff_notes WHERE target_uuid=? "
+                            + "ORDER BY created_at DESC LIMIT ?")) {
+                query.setString(1, target.toString());
+                query.setInt(2, Math.max(1, Math.min(50, limit)));
+                try (ResultSet rows = query.executeQuery()) {
+                    while (rows.next()) notes.add(new StaffNote(rows.getString(1), rows.getString(2), rows.getLong(3)));
+                }
+            }
+            return List.copyOf(notes);
+        });
     }
 
     /** Staff wallet adjustment with the administrator recorded in the immutable transaction ledger. */
@@ -1293,6 +1435,10 @@ public final class ForgeDatabase implements AutoCloseable {
             return new Payment(false, false, true, 0, 0);
         }
     }
+
+    public record ReportSubmission(boolean success, String failure, long id) { }
+    public record Report(long id, String reporter, String target, String reason, long createdAt) { }
+    public record StaffNote(String staff, String note, long createdAt) { }
 
     public record AdminAdjustment(boolean success, String failure, long balanceCents) {
         public static AdminAdjustment failed(String reason) {

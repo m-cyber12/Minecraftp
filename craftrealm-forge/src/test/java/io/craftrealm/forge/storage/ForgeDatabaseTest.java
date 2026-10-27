@@ -141,6 +141,28 @@ final class ForgeDatabaseTest {
     }
 
     @Test
+    void reportsAndStaffNotesPersistAndResolve() throws Exception {
+        UUID reporter = UUID.randomUUID();
+        UUID target = UUID.randomUUID();
+        UUID staff = UUID.randomUUID();
+        try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("moderation.db"), 1,
+                LoggerFactory.getLogger("forge-moderation-test"))) {
+            database.open();
+            ForgeDatabase.ReportSubmission report = database.submitReport(reporter, "Reporter", target,
+                    "Target", "Griefing at spawn").join();
+            assertTrue(report.success());
+            assertEquals("cooldown", database.submitReport(reporter, "Reporter", target,
+                    "Target", "Second report").join().failure());
+            assertEquals(1, database.openReports(25).join().size());
+            assertTrue(database.resolveReport(report.id(), staff).join());
+            assertTrue(database.openReports(25).join().isEmpty());
+
+            database.addStaffNote(staff, "Moderator", target, "Target", "Previous warning").join();
+            assertEquals("Previous warning", database.staffNotes(target, 10).join().get(0).note());
+        }
+    }
+
+    @Test
     void cosmeticTrailSelectionPersistsAndCanBeCleared() throws Exception {
         UUID player = UUID.randomUUID();
         try (ForgeDatabase database = new ForgeDatabase(temporaryDirectory.resolve("cosmetics.db"), 1,

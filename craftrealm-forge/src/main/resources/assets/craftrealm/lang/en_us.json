@@ -79,7 +79,7 @@
   "craftrealm.menu.season": "Season leaderboard",
   "craftrealm.menu.cosmetics": "Cosmetic trails",
   "craftrealm.menu.help": "Help",
-  "craftrealm.help.commands": "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin, /discord, /crmenu",
+  "craftrealm.help.commands": "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin, /discord, /crmenu, /report, /crreports, /crresolve, /crnote, /crnotes",
   "craftrealm.error.market_failed": "The market could not complete this purchase.",
   "craftrealm.error.sell_wallet_limit": "Selling would exceed your wallet limit; your items were returned.",
   "craftrealm.error.market_sale_failed": "The market could not complete this sale; your items were returned.",
@@ -96,5 +96,16 @@
   "craftrealm.bank.vault_funds": "Insufficient vault funds.",
   "craftrealm.bank.loan_active": "Repay your current loan before taking another.",
   "craftrealm.bank.loan_none": "You have no outstanding loan.",
-  "craftrealm.bank.loan_limit": "Requested amount exceeds the configured loan limit of %s."
+  "craftrealm.bank.loan_limit": "Requested amount exceeds the configured loan limit of %s.",
+  "craftrealm.report.self": "You cannot report yourself.",
+  "craftrealm.report.cooldown": "Please wait before submitting another report.",
+  "craftrealm.report.invalid": "Report reason must be between 1 and 400 characters.",
+  "craftrealm.report.submitted": "Report #%s submitted for %s.",
+  "craftrealm.report.list_header": "Open reports: %s",
+  "craftrealm.report.row": "#%s · %s reported %s: %s",
+  "craftrealm.report.resolved": "Report #%s resolved.",
+  "craftrealm.report.not_open": "Report #%s was not found or is already resolved.",
+  "craftrealm.notes.added": "Staff note added for %s.",
+  "craftrealm.notes.header": "Staff notes for %s (%s):",
+  "craftrealm.notes.row": "[%s] %s"
 }

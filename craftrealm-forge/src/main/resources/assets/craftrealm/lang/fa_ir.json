@@ -79,7 +79,7 @@
   "craftrealm.menu.season": "رتبه‌بندی فصل",
   "craftrealm.menu.cosmetics": "ردّهای تزئینی",
   "craftrealm.menu.help": "راهنما",
-  "craftrealm.help.commands": "دستورها: /balance، /pay، /baltop، /bank، /market، /shop، /sell، /claim، /jobs، /quests، /season، /cosmetic، /event، /cradmin، /discord، /crmenu",
+  "craftrealm.help.commands": "دستورها: /balance، /pay، /baltop، /bank، /market، /shop، /sell، /claim، /jobs، /quests، /season، /cosmetic، /event، /cradmin، /discord، /crmenu، /report، /crreports، /crresolve، /crnote، /crnotes",
   "craftrealm.error.market_failed": "بازار نتوانست این خرید را انجام دهد.",
   "craftrealm.error.sell_wallet_limit": "فروش از سقف کیف پول عبور می‌کند؛ آیتم‌ها بازگردانده شدند.",
   "craftrealm.error.market_sale_failed": "بازار نتوانست این فروش را انجام دهد؛ آیتم‌ها بازگردانده شدند.",
@@ -96,5 +96,16 @@
   "craftrealm.bank.vault_funds": "موجودی بانک کافی نیست.",
   "craftrealm.bank.loan_active": "برای دریافت وام جدید، ابتدا وام فعلی را تسویه کنید.",
   "craftrealm.bank.loan_none": "وام تسویه‌نشده‌ای ندارید.",
-  "craftrealm.bank.loan_limit": "مبلغ درخواست‌شده از سقف وام تنظیم‌شده %s بیشتر است."
+  "craftrealm.bank.loan_limit": "مبلغ درخواست‌شده از سقف وام تنظیم‌شده %s بیشتر است.",
+  "craftrealm.report.self": "نمی‌توانید خودتان را گزارش کنید.",
+  "craftrealm.report.cooldown": "برای ثبت گزارش بعدی کمی صبر کنید.",
+  "craftrealm.report.invalid": "دلیل گزارش باید بین ۱ تا ۴۰۰ نویسه باشد.",
+  "craftrealm.report.submitted": "گزارش شمارهٔ %s برای %s ثبت شد.",
+  "craftrealm.report.list_header": "گزارش‌های باز: %s",
+  "craftrealm.report.row": "#%s · %s بازیکن %s را گزارش کرد: %s",
+  "craftrealm.report.resolved": "گزارش شمارهٔ %s بسته شد.",
+  "craftrealm.report.not_open": "گزارش شمارهٔ %s پیدا نشد یا قبلاً بسته شده است.",
+  "craftrealm.notes.added": "یادداشت کارکنان برای %s ثبت شد.",
+  "craftrealm.notes.header": "یادداشت‌های کارکنان برای %s (%s):",
+  "craftrealm.notes.row": "[%s] %s"
 }

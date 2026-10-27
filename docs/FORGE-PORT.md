@@ -19,7 +19,9 @@ native Brigadier commands for `/balance` (`/bal`), `/pay`, `/baltop`, `/bank`,
 `/claim`, `/unclaim`, `/claims`, `/jobs`, `/quests`, `/market`, `/shop buy` and `/sell`.
 The configurable item market seeds its catalogue once, persists dynamic price
 pressure and trades atomically against the wallet/ledger. Operator-only `/cradmin
-give` and `/cradmin take` adjustments are audited through the economy ledger.
+give` and `/cradmin take` adjustments are audited through the economy ledger. Player reports
+(`/report`, `/crreports`, `/crresolve`) and private staff notes (`/crnote`, `/crnotes`)
+are persisted with reporter cooldown and staff-only access.
 `/event start` schedules temporary server-wide profession reward multipliers and
 `/event stop` cancels them. Daily profession quests persist action progress and
 allow a single claim for a configurable reward. `/cosmetic` provides persistent,
