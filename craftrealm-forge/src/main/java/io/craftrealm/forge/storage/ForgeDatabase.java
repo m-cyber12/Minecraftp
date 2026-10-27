@@ -118,7 +118,7 @@ public final class ForgeDatabase implements AutoCloseable {
     }
 
     public CompletableFuture<Long> balance(UUID player, String name, long initialBalanceCents) {
-        return supply(connection -> inTransaction(connection, () -> {
+        return supply(connection -> inTransaction(connection, ignored -> {
             ensureAccount(connection, player, name, initialBalanceCents);
             return readBalance(connection, player);
         }));
@@ -203,7 +203,7 @@ public final class ForgeDatabase implements AutoCloseable {
     }
 
     public CompletableFuture<BankSnapshot> bankBalance(UUID uuid, String name, long initialWalletCents) {
-        return supply(connection -> inTransaction(connection, () -> {
+        return supply(connection -> inTransaction(connection, ignored -> {
             ensureAccount(connection, uuid, name, initialWalletCents);
             ensureBankAccount(connection, uuid);
             return new BankSnapshot(readBalance(connection, uuid), readBankBalance(connection, uuid));
