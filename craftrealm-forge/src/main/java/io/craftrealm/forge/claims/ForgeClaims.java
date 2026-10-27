@@ -103,9 +103,8 @@ public final class ForgeClaims {
         if (player.hasPermissions(2)) return;
         if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(ready
-                    ? "This chunk is protected by another player."
-                    : "Claim protection is starting; building is temporarily disabled."));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(ready
+                    ? "craftrealm.claim.protected" : "craftrealm.claim.protection_starting"));
         }
     }
 
@@ -115,9 +114,8 @@ public final class ForgeClaims {
         if (player.hasPermissions(2)) return;
         if (!mayBuild(player.level().dimension().location().toString(), event.getPos(), player.getUUID())) {
             event.setCanceled(true);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(ready
-                    ? "This chunk is protected by another player."
-                    : "Claim protection is starting; building is temporarily disabled."));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(ready
+                    ? "craftrealm.claim.protected" : "craftrealm.claim.protection_starting"));
         }
     }
 

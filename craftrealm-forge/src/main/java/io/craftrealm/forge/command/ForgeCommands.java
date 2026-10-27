@@ -166,8 +166,7 @@ public final class ForgeCommands {
                         .executes(context -> testDiscord(context.getSource(), discord))));
         dispatcher.register(Commands.literal("craftrealm")
                 .executes(context -> {
-                    context.getSource().sendSuccess(() -> Component.literal(
-                            "CraftRealm Forge: /balance, /pay, /baltop, /bank, /market, /shop, /sell, /claim, /jobs, /quests, /season, /cosmetic, /event, /cradmin, /discord, /crmenu"), false);
+                    context.getSource().sendSuccess(() -> Component.translatable("craftrealm.help.commands"), false);
                     return 1;
                 }));
     }
@@ -175,7 +174,7 @@ public final class ForgeCommands {
     private static int balanceSelf(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
         ServerPlayer player = source.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null;
         if (player == null) {
-            source.sendFailure(Component.literal("Console usage: /balance <player>"));
+            source.sendFailure(Component.translatable("craftrealm.error.console_balance_usage"));
             return 0;
         }
         return showBalance(source, player.getUUID(), player.getGameProfile().getName(), database, logger);
@@ -190,7 +189,7 @@ public final class ForgeCommands {
                                    Supplier<ForgeDatabase> database, Logger logger) {
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         store.balance(uuid, name, startingCents()).whenComplete((cents, error) -> source.getServer().execute(() -> {
@@ -198,7 +197,7 @@ public final class ForgeCommands {
                 reportFailure(source, error, logger);
                 return;
             }
-            source.sendSuccess(() -> Component.literal(name + "'s balance: " + format(cents)), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.balance.result", name, format(cents)), false);
         }));
         return 1;
     }
@@ -206,11 +205,11 @@ public final class ForgeCommands {
     private static int pay(CommandSourceStack source, ServerPlayer recipient, double rawAmount,
                            Supplier<ForgeDatabase> database, Logger logger) {
         if (!(source.getEntity() instanceof ServerPlayer payer)) {
-            source.sendFailure(Component.literal("Only players can pay another player."));
+            source.sendFailure(Component.translatable("craftrealm.error.players_only_pay"));
             return 0;
         }
         if (payer.getUUID().equals(recipient.getUUID())) {
-            source.sendFailure(Component.literal("You cannot pay yourself."));
+            source.sendFailure(Component.translatable("craftrealm.error.pay_self"));
             return 0;
         }
         final long amountCents;
@@ -218,17 +217,17 @@ public final class ForgeCommands {
             amountCents = BigDecimal.valueOf(rawAmount).setScale(2, RoundingMode.UNNECESSARY)
                     .movePointRight(2).longValueExact();
         } catch (NumberFormatException | ArithmeticException invalidPrecision) {
-            source.sendFailure(Component.literal("Payments must be finite and use at most two decimal places."));
+            source.sendFailure(Component.translatable("craftrealm.error.invalid_precision"));
             return 0;
         }
         long maxTransaction = toCents(ForgeConfig.MAX_TRANSACTION.get());
         if (amountCents <= 0 || amountCents > maxTransaction) {
-            source.sendFailure(Component.literal("Payment is outside the configured transaction limits."));
+            source.sendFailure(Component.translatable("craftrealm.error.transaction_limit"));
             return 0;
         }
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         UUID payerId = payer.getUUID();
@@ -251,7 +250,7 @@ public final class ForgeCommands {
                             balances[1], balances[1] + amountCents, ForgeTransactionType.PAY,
                             "player payment", payerId);
                     if (MinecraftForge.EVENT_BUS.post(debit) || MinecraftForge.EVENT_BUS.post(credit)) {
-                        source.sendFailure(Component.literal("Another mod cancelled this balance change."));
+                        source.sendFailure(Component.translatable("craftrealm.error.balance_cancelled"));
                         return;
                     }
                     store.pay(payerId, payerName, recipientId, recipientName, amountCents, startingCents(),
@@ -262,17 +261,17 @@ public final class ForgeCommands {
                                     return;
                                 }
                                 if (result.insufficientFunds()) {
-                                    source.sendFailure(Component.literal("Insufficient funds."));
+                                    source.sendFailure(Component.translatable("craftrealm.error.insufficient_funds"));
                                 } else if (result.recipientLimit()) {
-                                    source.sendFailure(Component.literal("The recipient's balance is at its configured limit."));
+                                    source.sendFailure(Component.translatable("craftrealm.error.recipient_limit"));
                                 } else if (result.paid()) {
                                     String amount = format(amountCents);
-                                    source.sendSuccess(() -> Component.literal("Paid " + amount + " to " + recipientName
-                                            + ". Balance: " + format(result.payerBalanceCents())), false);
+                                    source.sendSuccess(() -> Component.translatable("craftrealm.pay.sent", amount, recipientName,
+                                            format(result.payerBalanceCents())), false);
                                     ServerPlayer onlineRecipient = server.getPlayerList().getPlayer(recipientId);
                                     if (onlineRecipient != null) {
-                                        onlineRecipient.sendSystemMessage(Component.literal("Received " + amount + " from "
-                                                + payerName + ". Balance: " + format(result.recipientBalanceCents())));
+                                        onlineRecipient.sendSystemMessage(Component.translatable("craftrealm.pay.received", amount, payerName,
+                                                format(result.recipientBalanceCents())));
                                     }
                                 }
                             }));
@@ -285,7 +284,7 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeMenuService menus = menusSupplier.get();
         if (menus == null) {
-            source.sendFailure(Component.literal("CraftRealm menu is not available."));
+            source.sendFailure(Component.translatable("craftrealm.error.menu_unavailable"));
             return 0;
         }
         menus.open(player);
@@ -295,11 +294,11 @@ public final class ForgeCommands {
     private static int testDiscord(CommandSourceStack source, Supplier<ForgeDiscordBridge> discordSupplier) {
         ForgeDiscordBridge bridge = discordSupplier.get();
         if (bridge == null || !bridge.configured()) {
-            source.sendFailure(Component.literal("Discord webhook is not configured."));
+            source.sendFailure(Component.translatable("craftrealm.error.discord_unconfigured"));
             return 0;
         }
         bridge.send("CraftRealm Forge webhook test received.");
-        source.sendSuccess(() -> Component.literal("Discord test notification queued."), true);
+        source.sendSuccess(() -> Component.translatable("craftrealm.discord.test_queued"), true);
         return 1;
     }
 
@@ -307,11 +306,11 @@ public final class ForgeCommands {
         ForgeEventService events = eventsSupplier.get();
         ForgeEventService.ActiveEvent active = events == null ? null : events.active();
         if (active == null) {
-            source.sendSuccess(() -> Component.literal("No profession event is currently active."), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.event.none"), false);
         } else {
             long seconds = Math.max(0L, (active.endsAtMillis() - System.currentTimeMillis()) / 1000L);
-            source.sendSuccess(() -> Component.literal("Active event: " + active.job().toLowerCase(Locale.ROOT)
-                    + " rewards ×" + active.multiplier() + " · " + seconds + " seconds remain."), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.event.active", active.job().toLowerCase(Locale.ROOT),
+                    active.multiplier(), seconds), false);
         }
         return 1;
     }
@@ -320,12 +319,12 @@ public final class ForgeCommands {
                                   Supplier<ForgeEventService> eventsSupplier) {
         String job = rawJob.toUpperCase(Locale.ROOT);
         if (!java.util.Set.of("ALL", "MINER", "FARMER", "HUNTER", "FISHER", "BUILDER").contains(job)) {
-            source.sendFailure(Component.literal("Job must be all, miner, farmer, hunter, fisher, or builder."));
+            source.sendFailure(Component.translatable("craftrealm.event.invalid_job"));
             return 0;
         }
         ForgeEventService events = eventsSupplier.get();
         if (events == null) {
-            source.sendFailure(Component.literal("Event service is not available."));
+            source.sendFailure(Component.translatable("craftrealm.error.event_unavailable"));
             return 0;
         }
         events.start(source.getServer(), job, minutes, multiplier);
@@ -335,7 +334,7 @@ public final class ForgeCommands {
     private static int stopEvent(CommandSourceStack source, Supplier<ForgeEventService> eventsSupplier) {
         ForgeEventService events = eventsSupplier.get();
         if (events == null || !events.stop(source.getServer())) {
-            source.sendFailure(Component.literal("No profession event is active."));
+            source.sendFailure(Component.translatable("craftrealm.event.none"));
             return 0;
         }
         return 1;
@@ -346,12 +345,12 @@ public final class ForgeCommands {
         long amount = parseCents(source, rawAmount);
         if (amount <= 0) return 0;
         if (amount > toCents(ForgeConfig.MAX_TRANSACTION.get())) {
-            source.sendFailure(Component.literal("Amount exceeds the configured transaction limit."));
+            source.sendFailure(Component.translatable("craftrealm.error.transaction_limit"));
             return 0;
         }
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         UUID targetId = target.getUUID();
@@ -364,30 +363,28 @@ public final class ForgeCommands {
                 return;
             }
             if (!credit && oldBalance < amount) {
-                source.sendFailure(Component.literal("Target has insufficient funds."));
+                source.sendFailure(Component.translatable("craftrealm.error.target_funds"));
                 return;
             }
             if (credit && oldBalance > toCents(ForgeConfig.MAX_BALANCE.get()) - amount) {
-                source.sendFailure(Component.literal("The adjustment would exceed the configured balance limit."));
+                source.sendFailure(Component.translatable("craftrealm.error.balance_limit"));
                 return;
             }
             long newBalance = credit ? oldBalance + amount : oldBalance - amount;
             ForgeBalanceChangeEvent change = new ForgeBalanceChangeEvent(targetId, oldBalance, newBalance,
                     ForgeTransactionType.ADMIN_ADJUSTMENT, credit ? "admin grant" : "admin withdrawal", actor);
             if (MinecraftForge.EVENT_BUS.post(change)) {
-                source.sendFailure(Component.literal("Another mod cancelled this balance change."));
+                source.sendFailure(Component.translatable("craftrealm.error.balance_cancelled"));
                 return;
             }
             store.adminAdjust(actor, targetId, targetName, amount, credit, startingCents(),
                             toCents(ForgeConfig.MAX_BALANCE.get()))
                     .whenComplete((result, failure) -> server.execute(() -> {
                         if (failure != null) reportFailure(source, failure, logger);
-                        else if (!result.success()) source.sendFailure(Component.literal(
-                                result.failure().equals("wallet-funds") ? "Target has insufficient funds."
-                                        : "The adjustment would exceed a configured limit."));
-                        else source.sendSuccess(() -> Component.literal((credit ? "Granted " : "Removed ")
-                                + format(amount) + " " + (credit ? "to " : "from ") + targetName
-                                + ". New balance: " + format(result.balanceCents())), true);
+                        else if (!result.success()) source.sendFailure(Component.translatable(result.failure().equals("wallet-funds")
+                                ? "craftrealm.error.target_funds" : "craftrealm.error.balance_limit"));
+                        else source.sendSuccess(() -> Component.translatable(credit ? "craftrealm.admin.granted" : "craftrealm.admin.removed",
+                                format(amount), targetName, format(result.balanceCents())), true);
                     }));
         }));
         return 1;
@@ -396,7 +393,7 @@ public final class ForgeCommands {
     private static int marketList(CommandSourceStack source, Supplier<ForgeMarket> marketSupplier, Logger logger) {
         ForgeMarket market = marketSupplier.get();
         if (market == null) {
-            source.sendFailure(Component.literal("Market is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.market_starting"));
             return 0;
         }
         market.quotes().whenComplete((quotes, failure) -> source.getServer().execute(() -> {
@@ -404,10 +401,10 @@ public final class ForgeCommands {
                 reportFailure(source, failure, logger);
                 return;
             }
-            source.sendSuccess(() -> Component.literal("CraftRealm market · use /shop buy <item> <quantity> or /sell <item> <quantity>"), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.market.header"), false);
             for (ForgeDatabase.MarketQuote quote : quotes) {
-                source.sendSuccess(() -> Component.literal(quote.itemId() + "  " + format(quote.priceCents())
-                        + " each  ·  traded " + quote.tradedUnits()), false);
+                source.sendSuccess(() -> Component.translatable("craftrealm.market.row", quote.itemId(),
+                        format(quote.priceCents()), quote.tradedUnits()), false);
             }
         }));
         return 1;
@@ -418,14 +415,14 @@ public final class ForgeCommands {
         ForgeMarket market = marketSupplier.get();
         String id = market == null ? null : market.itemId(input);
         if (id == null) {
-            source.sendFailure(Component.literal("That item is not available in the configured market."));
+            source.sendFailure(Component.translatable("craftrealm.error.item_unavailable"));
             return 0;
         }
         market.quote(id).whenComplete((quote, failure) -> source.getServer().execute(() -> {
             if (failure != null) reportFailure(source, failure, logger);
-            else if (quote == null) source.sendFailure(Component.literal("No market quote exists for that item."));
-            else source.sendSuccess(() -> Component.literal(id + " costs " + format(quote.priceCents())
-                    + " per item; base price " + format(quote.basePriceCents()) + "."), false);
+            else if (quote == null) source.sendFailure(Component.translatable("craftrealm.error.quote_missing"));
+            else source.sendSuccess(() -> Component.translatable("craftrealm.market.quote", id,
+                    format(quote.priceCents()), format(quote.basePriceCents())), false);
         }));
         return 1;
     }
@@ -437,7 +434,7 @@ public final class ForgeCommands {
         ForgeMarket market = marketSupplier.get();
         String id = market == null ? null : market.itemId(input);
         if (id == null) {
-            source.sendFailure(Component.literal("That item is not available in the configured market."));
+            source.sendFailure(Component.translatable("craftrealm.error.item_unavailable"));
             return 0;
         }
         net.minecraft.world.item.Item item = market.item(id);
@@ -452,8 +449,8 @@ public final class ForgeCommands {
                         return;
                     }
                     if (!trade.success()) {
-                        source.sendFailure(Component.literal(trade.failure().equals("wallet-funds")
-                                ? "Insufficient funds for this purchase." : "The market could not complete this purchase."));
+                        source.sendFailure(Component.translatable(trade.failure().equals("wallet-funds")
+                                ? "craftrealm.error.insufficient_funds" : "craftrealm.error.market_failed"));
                         return;
                     }
                     ServerPlayer online = server.getPlayerList().getPlayer(playerId);
@@ -466,8 +463,8 @@ public final class ForgeCommands {
                     net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(item, quantity);
                     online.getInventory().add(stack);
                     if (!stack.isEmpty()) online.drop(stack.copy(), false);
-                    online.sendSystemMessage(Component.literal("Bought " + quantity + " " + id + " for "
-                            + format(trade.totalCents()) + ". Wallet: " + format(trade.walletCents())));
+                    online.sendSystemMessage(Component.translatable("craftrealm.market.bought", quantity, id,
+                            format(trade.totalCents()), format(trade.walletCents())));
                 }));
         return 1;
     }
@@ -480,12 +477,12 @@ public final class ForgeCommands {
         String id = market == null ? null : market.itemId(input);
         net.minecraft.world.item.Item item = id == null || market == null ? null : market.item(id);
         if (id == null || item == null) {
-            source.sendFailure(Component.literal("That item is not available in the configured market."));
+            source.sendFailure(Component.translatable("craftrealm.error.item_unavailable"));
             return 0;
         }
         java.util.List<net.minecraft.world.item.ItemStack> removed = takeItems(player, item, quantity);
         if (removed == null) {
-            source.sendFailure(Component.literal("You do not have enough of that item."));
+            source.sendFailure(Component.translatable("craftrealm.error.item_shortage"));
             return 0;
         }
         UUID playerId = player.getUUID();
@@ -500,13 +497,12 @@ public final class ForgeCommands {
                     if (failure != null || trade == null || !trade.success()) {
                         restoreItems(online, level, position, removed);
                         if (failure != null) reportFailure(source, failure, logger);
-                        else source.sendFailure(Component.literal(trade != null && trade.failure().equals("wallet-limit")
-                                ? "Selling would exceed your wallet limit; your items were returned."
-                                : "The market could not complete this sale; your items were returned."));
+                        else source.sendFailure(Component.translatable(trade != null && trade.failure().equals("wallet-limit")
+                                ? "craftrealm.error.sell_wallet_limit" : "craftrealm.error.market_sale_failed"));
                         return;
                     }
-                    if (online != null) online.sendSystemMessage(Component.literal("Sold " + quantity + " " + id
-                            + " for " + format(trade.totalCents()) + ". Wallet: " + format(trade.walletCents())));
+                    if (online != null) online.sendSystemMessage(Component.translatable("craftrealm.market.sold", quantity, id,
+                            format(trade.totalCents()), format(trade.walletCents())));
                 }));
         return 1;
     }
@@ -554,18 +550,18 @@ public final class ForgeCommands {
         if (player == null) return 0;
         String job = rawJob.toUpperCase(Locale.ROOT);
         if (!java.util.Set.of("MINER", "FARMER", "HUNTER", "FISHER", "BUILDER").contains(job)) {
-            source.sendFailure(Component.literal("Choose Miner, Farmer, Hunter, Fisher, or Builder."));
+            source.sendFailure(Component.translatable("craftrealm.jobs.invalid_choice"));
             return 0;
         }
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         store.chooseJob(player.getUUID(), job).whenComplete((selected, failure) -> source.getServer().execute(() -> {
             if (failure != null) reportFailure(source, failure, logger);
-            else source.sendSuccess(() -> Component.literal("Your profession is now "
-                    + job.substring(0, 1) + job.substring(1).toLowerCase(Locale.ROOT) + "."), false);
+            else source.sendSuccess(() -> Component.translatable("craftrealm.jobs.selected",
+                    job.substring(0, 1) + job.substring(1).toLowerCase(Locale.ROOT)), false);
         }));
         return 1;
     }
@@ -575,7 +571,7 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         int days = ForgeConfig.SEASON_DURATION_DAYS.get();
@@ -585,8 +581,7 @@ public final class ForgeCommands {
         long remainingDays = Math.max(1, (until + 86_400_000L - 1) / 86_400_000L);
         store.seasonScore(player.getUUID(), seasonKey).whenComplete((score, failure) -> source.getServer().execute(() -> {
             if (failure != null) reportFailure(source, failure, logger);
-            else source.sendSuccess(() -> Component.literal("Current season " + (seasonKey + 1)
-                    + " · points " + score + " · " + remainingDays + " days remain. Use /season top."), false);
+            else source.sendSuccess(() -> Component.translatable("craftrealm.season.status", seasonKey + 1, score, remainingDays), false);
         }));
         return 1;
     }
@@ -594,7 +589,7 @@ public final class ForgeCommands {
     private static int seasonTop(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         int days = ForgeConfig.SEASON_DURATION_DAYS.get();
@@ -602,12 +597,11 @@ public final class ForgeCommands {
         store.seasonTop(seasonKey, 10).whenComplete((ranks, failure) -> source.getServer().execute(() -> {
             if (failure != null) reportFailure(source, failure, logger);
             else {
-                source.sendSuccess(() -> Component.literal("Season " + (seasonKey + 1) + " profession leaderboard:"), false);
+                source.sendSuccess(() -> Component.translatable("craftrealm.season.header", seasonKey + 1), false);
                 int[] rank = {1};
                 for (ForgeDatabase.SeasonRank entry : ranks) {
                     int place = rank[0]++;
-                    source.sendSuccess(() -> Component.literal(place + ". " + entry.name() + " · "
-                            + entry.points() + " points"), false);
+                    source.sendSuccess(() -> Component.translatable("craftrealm.season.row", place, entry.name(), entry.points()), false);
                 }
             }
         }));
@@ -619,12 +613,11 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeCosmetics cosmetics = cosmeticsSupplier.get();
         if (cosmetics == null) {
-            source.sendFailure(Component.literal("Cosmetics service is starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.cosmetics_starting"));
             return 0;
         }
-        source.sendSuccess(() -> Component.literal("Equipped trail: " + cosmetics.equipped(player.getUUID())
-                + ". Available: " + String.join(", ", ForgeCosmetics.availableTrails())
-                + ". Use /cosmetic equip <trail> or /cosmetic clear."), false);
+        source.sendSuccess(() -> Component.translatable("craftrealm.cosmetic.status", cosmetics.equipped(player.getUUID()),
+                String.join(", ", ForgeCosmetics.availableTrails())), false);
         return 1;
     }
 
@@ -634,20 +627,20 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeCosmetics cosmetics = cosmeticsSupplier.get();
         if (cosmetics == null) {
-            source.sendFailure(Component.literal("Cosmetics service is starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.cosmetics_starting"));
             return 0;
         }
         String normalized = trail.toUpperCase(Locale.ROOT);
         if (!normalized.equals("NONE") && !ForgeCosmetics.availableTrails().contains(normalized)) {
-            source.sendFailure(Component.literal("Unknown trail. Choose: "
-                    + String.join(", ", ForgeCosmetics.availableTrails()) + "."));
+            source.sendFailure(Component.translatable("craftrealm.cosmetic.unknown", String.join(", ", ForgeCosmetics.availableTrails())));
             return 0;
         }
         UUID playerId = player.getUUID();
         cosmetics.equip(playerId, normalized).whenComplete((ignored, failure) -> source.getServer().execute(() -> {
             if (failure != null) reportFailure(source, failure, logger);
-            else source.sendSuccess(() -> Component.literal(normalized.equals("NONE")
-                    ? "Cosmetic trail cleared." : "Equipped " + normalized.toLowerCase(Locale.ROOT) + " trail."), false);
+            else source.sendSuccess(() -> Component.translatable(normalized.equals("NONE")
+                    ? "craftrealm.cosmetic.cleared" : "craftrealm.cosmetic.equipped",
+                    normalized.toLowerCase(Locale.ROOT)), false);
         }));
         return 1;
     }
@@ -657,20 +650,16 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         int target = ForgeConfig.QUEST_ACTIONS_REQUIRED.get();
         store.questState(player.getUUID(), target).whenComplete((state, failure) -> source.getServer().execute(() -> {
             if (failure != null) reportFailure(source, failure, logger);
-            else if (state.claimed()) source.sendSuccess(() -> Component.literal(
-                    "Daily profession quest completed. A new quest is available after the daily reset."), false);
-            else if (state.readyToClaim()) source.sendSuccess(() -> Component.literal(
-                    "Daily profession quest complete! Claim " + format(toCents(ForgeConfig.QUEST_REWARD.get()))
-                            + " with /quests claim."), false);
-            else source.sendSuccess(() -> Component.literal("Daily profession quest: " + state.progress()
-                    + "/" + state.actionsRequired() + " successful profession actions. Reward: "
-                    + format(toCents(ForgeConfig.QUEST_REWARD.get())) + "."), false);
+            else if (state.claimed()) source.sendSuccess(() -> Component.translatable("craftrealm.quest.claimed_today"), false);
+            else if (state.readyToClaim()) source.sendSuccess(() -> Component.translatable("craftrealm.quest.ready", format(toCents(ForgeConfig.QUEST_REWARD.get()))), false);
+            else source.sendSuccess(() -> Component.translatable("craftrealm.quest.progress", state.progress(), state.actionsRequired(),
+                    format(toCents(ForgeConfig.QUEST_REWARD.get()))), false);
         }));
         return 1;
     }
@@ -680,7 +669,7 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         long reward = toCents(ForgeConfig.QUEST_REWARD.get());
@@ -689,13 +678,13 @@ public final class ForgeCommands {
                         toCents(ForgeConfig.MAX_BALANCE.get()))
                 .whenComplete((result, failure) -> source.getServer().execute(() -> {
                     if (failure != null) reportFailure(source, failure, logger);
-                    else if (!result.success()) source.sendFailure(Component.literal(switch (result.failure()) {
-                        case "already-claimed" -> "You have already claimed today's quest reward.";
-                        case "wallet-limit" -> "Your wallet is too close to its limit to claim the reward.";
-                        default -> "Complete today's profession actions before claiming the reward.";
+                    else if (!result.success()) source.sendFailure(Component.translatable(switch (result.failure()) {
+                        case "already-claimed" -> "craftrealm.quest.already_claimed";
+                        case "wallet-limit" -> "craftrealm.quest.wallet_limit";
+                        default -> "craftrealm.quest.not_ready";
                     }));
-                    else source.sendSuccess(() -> Component.literal("Daily quest reward claimed: "
-                            + format(result.rewardCents()) + ". Wallet: " + format(result.balanceCents())), false);
+                    else source.sendSuccess(() -> Component.translatable("craftrealm.quest.reward_claimed", format(result.rewardCents()),
+                            format(result.balanceCents())), false);
                 }));
         return 1;
     }
@@ -705,17 +694,17 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         store.jobState(player.getUUID()).whenComplete((state, failure) -> source.getServer().execute(() -> {
             if (failure != null) {
                 reportFailure(source, failure, logger);
             } else if (state.activeJob() == null) {
-                source.sendSuccess(() -> Component.literal("Choose a profession with /jobs choose <miner|farmer|hunter|fisher|builder>."), false);
+                source.sendSuccess(() -> Component.translatable("craftrealm.jobs.choose_prompt"), false);
             } else {
-                source.sendSuccess(() -> Component.literal(state.activeJob() + " · level " + state.level()
-                        + " · XP " + state.xp() + " · earned today " + format(state.earnedTodayCents())), false);
+                source.sendSuccess(() -> Component.translatable("craftrealm.jobs.status", state.activeJob(), state.level(),
+                        state.xp(), format(state.earnedTodayCents())), false);
             }
         }));
         return 1;
@@ -726,7 +715,7 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeClaims claims = claimsSupplier.get();
         if (claims == null || !claims.isReady()) {
-            source.sendFailure(Component.literal("Claim protection is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.claims_starting"));
             return 0;
         }
         String dimension = player.level().dimension().location().toString();
@@ -736,20 +725,19 @@ public final class ForgeCommands {
         claims.createAsync(player, dimension, chunkX, chunkZ, cost, startingCents(),
                 ForgeConfig.MAX_CLAIMS_PER_PLAYER.get(), result -> {
                     if (!result.success()) {
-                        source.sendFailure(Component.literal(switch (result.failure()) {
-                            case "already-claimed" -> "This chunk is already claimed.";
-                            case "claim-limit" -> "You have reached the configured claim limit.";
-                            case "insufficient-funds" -> "You cannot afford this claim.";
-                            default -> "Claim could not be created. Check the server log.";
+                        source.sendFailure(Component.translatable(switch (result.failure()) {
+                            case "already-claimed" -> "craftrealm.claim.already_claimed";
+                            case "claim-limit" -> "craftrealm.claim.limit";
+                            case "insufficient-funds" -> "craftrealm.claim.funds";
+                            default -> "craftrealm.claim.create_failed";
                         }));
                         if ("storage-error".equals(result.failure())) {
                             logger.error("Claim creation failed due to a storage error.");
                         }
                         return;
                     }
-                    source.sendSuccess(() -> Component.literal("Claimed chunk " + chunkX + ", " + chunkZ
-                            + " in " + dimension + " for " + format(cost) + ". Wallet: "
-                            + format(result.walletCents())), false);
+                    source.sendSuccess(() -> Component.translatable("craftrealm.claim.created", chunkX, chunkZ, dimension,
+                            format(cost), format(result.walletCents())), false);
                 });
         return 1;
     }
@@ -759,7 +747,7 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeClaims claims = claimsSupplier.get();
         if (claims == null || !claims.isReady()) {
-            source.sendFailure(Component.literal("Claim protection is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.claims_starting"));
             return 0;
         }
         String dimension = player.level().dimension().location().toString();
@@ -767,10 +755,10 @@ public final class ForgeCommands {
         int chunkZ = player.chunkPosition().z;
         claims.removeAsync(player, dimension, chunkX, chunkZ, result -> {
             if (!result.success()) {
-                source.sendFailure(Component.literal("You do not own a claim in this chunk."));
+                source.sendFailure(Component.translatable("craftrealm.error.claim_not_owner"));
                 return;
             }
-            source.sendSuccess(() -> Component.literal("Unclaimed chunk " + chunkX + ", " + chunkZ + "."), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.claim.removed", chunkX, chunkZ), false);
         });
         return 1;
     }
@@ -780,14 +768,13 @@ public final class ForgeCommands {
         if (player == null) return 0;
         ForgeClaims claims = claimsSupplier.get();
         if (claims == null || !claims.isReady()) {
-            source.sendFailure(Component.literal("Claim protection is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.claims_starting"));
             return 0;
         }
         var owned = claims.ownedBy(player.getUUID());
-        source.sendSuccess(() -> Component.literal("Your claimed chunks: " + owned.size()), false);
+        source.sendSuccess(() -> Component.translatable("craftrealm.claim.list_header", owned.size()), false);
         for (ForgeDatabase.Claim claim : owned) {
-            source.sendSuccess(() -> Component.literal("- " + claim.dimension() + " ["
-                    + claim.chunkX() + ", " + claim.chunkZ() + "]"), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.claim.row", claim.dimension(), claim.chunkX(), claim.chunkZ()), false);
         }
         return owned.size();
     }
@@ -795,12 +782,12 @@ public final class ForgeCommands {
     private static int bankBalance(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
         ServerPlayer player = source.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null;
         if (player == null) {
-            source.sendFailure(Component.literal("Only players have a bank account."));
+            source.sendFailure(Component.translatable("craftrealm.error.bank_players_only"));
             return 0;
         }
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         UUID uuid = player.getUUID();
@@ -810,8 +797,8 @@ public final class ForgeCommands {
                 reportFailure(source, error, logger);
                 return;
             }
-            source.sendSuccess(() -> Component.literal("Wallet: " + format(account.walletCents())
-                    + "  Vault: " + format(account.bankCents())), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.bank.balance", format(account.walletCents()),
+                    format(account.bankCents())), false);
         }));
         return 1;
     }
@@ -824,7 +811,7 @@ public final class ForgeCommands {
         if (amount <= 0) return 0;
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         UUID uuid = player.getUUID();
@@ -836,17 +823,16 @@ public final class ForgeCommands {
                         return;
                     }
                     if (!result.success()) {
-                        source.sendFailure(Component.literal(switch (result.failure()) {
-                            case "wallet-funds" -> "Insufficient wallet funds.";
-                            case "bank-funds" -> "Insufficient vault funds.";
-                            default -> "The configured balance limit would be exceeded.";
+                        source.sendFailure(Component.translatable(switch (result.failure()) {
+                            case "wallet-funds" -> "craftrealm.bank.wallet_funds";
+                            case "bank-funds" -> "craftrealm.bank.vault_funds";
+                            default -> "craftrealm.error.balance_limit";
                         }));
                         return;
                     }
                     ForgeDatabase.BankSnapshot account = result.balances();
-                    source.sendSuccess(() -> Component.literal((deposit ? "Deposited " : "Withdrew ")
-                            + format(amount) + ". Wallet: " + format(account.walletCents())
-                            + "  Vault: " + format(account.bankCents())), false);
+                    source.sendSuccess(() -> Component.translatable(deposit ? "craftrealm.bank.deposited" : "craftrealm.bank.withdrew",
+                            format(amount), format(account.walletCents()), format(account.bankCents())), false);
                 }));
         return 1;
     }
@@ -859,12 +845,12 @@ public final class ForgeCommands {
         if (amount <= 0) return 0;
         long limit = toCents(ForgeConfig.BANK_MAX_LOAN.get());
         if (amount > limit) {
-            source.sendFailure(Component.literal("Requested amount exceeds the configured loan limit of " + format(limit) + "."));
+            source.sendFailure(Component.translatable("craftrealm.bank.loan_limit", format(limit)));
             return 0;
         }
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         long term = ForgeConfig.BANK_LOAN_TERM_DAYS.get() * 86_400_000L;
@@ -874,13 +860,12 @@ public final class ForgeCommands {
                     if (error != null) {
                         reportFailure(source, error, logger);
                     } else if (!result.success()) {
-                        source.sendFailure(Component.literal(result.failure().equals("loan-active")
-                                ? "Repay your current loan before taking another."
-                                : "The configured balance limit would be exceeded."));
+                        source.sendFailure(Component.translatable(result.failure().equals("loan-active")
+                                ? "craftrealm.bank.loan_active" : "craftrealm.error.balance_limit"));
                     } else {
-                        source.sendSuccess(() -> Component.literal("Loan issued: " + format(amount)
-                                + ". Due " + java.time.Instant.ofEpochMilli(result.dueAt())
-                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate() + "."), false);
+                        source.sendSuccess(() -> Component.translatable("craftrealm.bank.loan_issued", format(amount),
+                                java.time.Instant.ofEpochMilli(result.dueAt())
+                                        .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()), false);
                     }
                 }));
         return 1;
@@ -894,7 +879,7 @@ public final class ForgeCommands {
         if (amount <= 0) return 0;
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         store.repayLoan(player.getUUID(), player.getGameProfile().getName(), amount, startingCents())
@@ -902,12 +887,11 @@ public final class ForgeCommands {
                     if (error != null) {
                         reportFailure(source, error, logger);
                     } else if (!result.success()) {
-                        source.sendFailure(Component.literal(result.failure().equals("loan-none")
-                                ? "You have no outstanding loan."
-                                : "Insufficient wallet funds to repay that amount."));
+                        source.sendFailure(Component.translatable(result.failure().equals("loan-none")
+                                ? "craftrealm.bank.loan_none" : "craftrealm.bank.wallet_funds"));
                     } else {
-                        source.sendSuccess(() -> Component.literal("Repayment accepted. Remaining principal: "
-                                + format(result.remainingCents()) + ". Wallet: " + format(result.walletCents())), false);
+                        source.sendSuccess(() -> Component.translatable("craftrealm.bank.repaid", format(result.remainingCents()),
+                                format(result.walletCents())), false);
                     }
                 }));
         return 1;
@@ -915,7 +899,7 @@ public final class ForgeCommands {
 
     private static ServerPlayer requirePlayer(CommandSourceStack source) {
         if (source.getEntity() instanceof ServerPlayer player) return player;
-        source.sendFailure(Component.literal("This command is available to players only."));
+        source.sendFailure(Component.translatable("craftrealm.error.players_only"));
         return null;
     }
 
@@ -925,17 +909,17 @@ public final class ForgeCommands {
                     .movePointRight(2).longValueExact();
             if (cents > 0) return cents;
         } catch (NumberFormatException | ArithmeticException ignored) {
-            source.sendFailure(Component.literal("Amounts must be finite and use at most two decimal places."));
+            source.sendFailure(Component.translatable("craftrealm.error.invalid_precision"));
             return 0;
         }
-        source.sendFailure(Component.literal("Amount must be positive."));
+        source.sendFailure(Component.translatable("craftrealm.error.amount_positive"));
         return 0;
     }
 
     private static int baltop(CommandSourceStack source, Supplier<ForgeDatabase> database, Logger logger) {
         ForgeDatabase store = database.get();
         if (store == null) {
-            source.sendFailure(Component.literal("CraftRealm storage is still starting."));
+            source.sendFailure(Component.translatable("craftrealm.error.storage_starting"));
             return 0;
         }
         store.top(10).whenComplete((accounts, error) -> source.getServer().execute(() -> {
@@ -943,12 +927,12 @@ public final class ForgeCommands {
                 reportFailure(source, error, logger);
                 return;
             }
-            source.sendSuccess(() -> Component.literal("Top balances — " + ForgeConfig.CURRENCY_NAME.get()), false);
+            source.sendSuccess(() -> Component.translatable("craftrealm.balance.top_header", ForgeConfig.CURRENCY_NAME.get()), false);
             int rank = 1;
             for (ForgeDatabase.AccountBalance account : accounts) {
                 int place = rank++;
-                source.sendSuccess(() -> Component.literal(place + ". " + account.name() + "  "
-                        + format(account.cents())), false);
+                source.sendSuccess(() -> Component.translatable("craftrealm.balance.top_row", place, account.name(),
+                        format(account.cents())), false);
             }
         }));
         return 1;
@@ -970,6 +954,6 @@ public final class ForgeCommands {
     private static void reportFailure(CommandSourceStack source, Throwable error, Logger logger) {
         Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
         logger.error("CraftRealm command database operation failed", cause);
-        source.sendFailure(Component.literal("CraftRealm could not complete the request. Check the server log."));
+        source.sendFailure(Component.translatable("craftrealm.error.database_failure"));
     }
 }

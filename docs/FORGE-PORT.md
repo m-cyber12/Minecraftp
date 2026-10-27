@@ -24,7 +24,9 @@ give` and `/cradmin take` adjustments are audited through the economy ledger.
 `/event stop` cancels them. Daily profession quests persist action progress and
 allow a single claim for a configurable reward. `/cosmetic` provides persistent,
 server-rendered particle trails with equip and clear commands. `/season` tracks
-fixed-length profession seasons and leaderboards from completed work actions. An
+fixed-length profession seasons and leaderboards from completed work actions. In-game
+messages use Minecraft translation keys with bundled `en_us` and `fa_ir` language
+files, so a server resource pack can override the text. An
 optional token-protected, read-only HTTP dashboard exposes server status, market
 quotes, and top balances; it binds to loopback by default. An optional outbound
 Discord webhook posts profession level-up notices and can be checked with

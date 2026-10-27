@@ -26,18 +26,16 @@ public final class ForgeEventService {
         long end = System.currentTimeMillis() + minutes * 60_000L;
         ActiveEvent next = new ActiveEvent(job.toUpperCase(Locale.ROOT), multiplier, end);
         active.set(next);
-        server.getPlayerList().broadcastSystemMessage(Component.literal("[CraftRealm] "
-                + (job.equalsIgnoreCase("ALL") ? "All professions" : job.toLowerCase(Locale.ROOT))
-                + " event started: " + multiplier + "x rewards for " + minutes + " minutes!"), false);
+        server.getPlayerList().broadcastSystemMessage(Component.translatable("craftrealm.event.started", job.equalsIgnoreCase("ALL")
+                ? "all professions" : job.toLowerCase(Locale.ROOT), multiplier, minutes), false);
         return next;
     }
 
     public boolean stop(MinecraftServer server) {
         ActiveEvent previous = active.getAndSet(null);
         if (previous == null) return false;
-        server.getPlayerList().broadcastSystemMessage(Component.literal("[CraftRealm] The "
-                + (previous.job().equals("ALL") ? "profession" : previous.job().toLowerCase(Locale.ROOT))
-                + " event has ended."), false);
+        server.getPlayerList().broadcastSystemMessage(Component.translatable("craftrealm.event.stopped", previous.job().equals("ALL")
+                ? "profession" : previous.job().toLowerCase(Locale.ROOT)), false);
         return true;
     }
 
@@ -47,7 +45,7 @@ public final class ForgeEventService {
         if (current != null && current.endsAtMillis() <= now && active.compareAndSet(current, null)) {
             if (lastExpiryNotice != current.endsAtMillis()) {
                 lastExpiryNotice = current.endsAtMillis();
-                server.getPlayerList().broadcastSystemMessage(Component.literal("[CraftRealm] The profession event has ended."), false);
+                server.getPlayerList().broadcastSystemMessage(Component.translatable("craftrealm.event.expired"), false);
             }
         }
     }

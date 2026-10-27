@@ -114,12 +114,11 @@ public final class ForgeJobListener {
                     server.execute(() -> {
                         ServerPlayer online = server.getPlayerList().getPlayer(playerId);
                         if (online == null) return;
-                        online.displayClientMessage(net.minecraft.network.chat.Component.literal(
-                                "+" + money(award.amountCents()) + "  ·  " + job.toLowerCase()
-                                        + " Lv." + award.level() + "  XP " + award.xp()), true);
+                        online.displayClientMessage(net.minecraft.network.chat.Component.translatable("craftrealm.jobs.reward",
+                                money(award.amountCents()), job.toLowerCase(), award.level(), award.xp()), true);
                         if (award.levelUp()) {
-                            online.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                                    "Your " + job.toLowerCase() + " job reached level " + award.level() + "!"));
+                            online.sendSystemMessage(net.minecraft.network.chat.Component.translatable("craftrealm.jobs.level_up",
+                                    job.toLowerCase(), award.level()));
                             ForgeDiscordBridge bridge = discord.get();
                             if (bridge != null) bridge.send(name + " reached " + job.toLowerCase()
                                     + " profession level " + award.level() + ".");
